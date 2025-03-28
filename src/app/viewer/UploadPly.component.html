@@ -1,0 +1,119 @@
+<div class="container">
+    <div #rendererContainer class="scene-container" style="width: 100%; height: 100%; background-color: #f0f0f0;"></div>
+</div>
+<div class="form">
+    <div class="mode-indicator" *ngIf="isEditMode">
+        Editing Mode (Press SPACE to exit)
+    </div>
+    <div class="controls">
+      <div class="file-inputs">
+        <input 
+          type="file" 
+          (change)="onPLYFileUpload($event)"
+          accept=".ply"
+          class="file-input"
+          placeholder="Upload PLY File"
+        />
+        <input 
+          type="file" 
+          (change)="onGLBFileUpload($event)"
+          accept=".glb,.gltf"
+          class="file-input"
+          placeholder="Upload GLB/GLTF File"
+        />
+        <input 
+          type="file" 
+          (change)="onJSONFileUpload($event)"
+          accept=".json"
+          class="file-input"
+          placeholder="Upload JSON Bounding Box File"
+        />
+      </div>
+      
+      <!-- Bounding Box Editing Controls -->
+      <div *ngIf="boundingBoxEditData" class="bbox-edit-controls">
+        <h3>Bounding Box Edit</h3>
+        
+        <!-- Center Edit -->
+        <div class="control-group">
+          <label>Center X:</label>
+          <input type="number" 
+            [(ngModel)]="boundingBoxEditData.centerX" 
+            (ngModelChange)="updateBoundingBox()"
+            step="0.1"
+          />
+          <label>Center Y:</label>
+          <input type="number" 
+            [(ngModel)]="boundingBoxEditData.centerY" 
+            (ngModelChange)="updateBoundingBox()"
+            step="0.1"
+          />
+          <label>Center Z:</label>
+          <input type="number" 
+            [(ngModel)]="boundingBoxEditData.centerZ" 
+            (ngModelChange)="updateBoundingBox()"
+            step="0.1"
+          />
+        </div>
+        
+        <!-- Dimensions Edit -->
+        <div class="control-group">
+          <label>Width:</label>
+          <input type="number" 
+            [(ngModel)]="boundingBoxEditData.dimensionX" 
+            (ngModelChange)="updateBoundingBox()"
+            min="0.1" 
+            step="0.1"
+          />
+          <label>Height:</label>
+          <input type="number" 
+            [(ngModel)]="boundingBoxEditData.dimensionY" 
+            (ngModelChange)="updateBoundingBox()"
+            min="0.1" 
+            step="0.1"
+          />
+          <label>Depth:</label>
+          <input type="number" 
+            [(ngModel)]="boundingBoxEditData.dimensionZ" 
+            (ngModelChange)="updateBoundingBox()"
+            min="0.1" 
+            step="0.1"
+          />
+        </div>
+        
+        <!-- Rotation Edit -->
+        <div class="control-group">
+          <label>Rotation X (degrees):</label>
+          <input type="number" 
+            [(ngModel)]="boundingBoxEditData.rotationX" 
+            (ngModelChange)="updateBoundingBox()"
+            step="1"
+          />
+          <label>Rotation Y (degrees):</label>
+          <input type="number" 
+            [(ngModel)]="boundingBoxEditData.rotationY" 
+            (ngModelChange)="updateBoundingBox()"
+            step="1"
+          />
+          <label>Rotation Z (degrees):</label>
+          <input type="number" 
+            [(ngModel)]="boundingBoxEditData.rotationZ" 
+            (ngModelChange)="updateBoundingBox()"
+            step="1"
+          />
+        </div>
+      </div>
+      <div class="point-size-control">
+        <label>Point Size: 
+          <input 
+            type="range" 
+            [value]="pointSize"
+            (input)="updatePointSize($event)"
+            min="0.01" 
+            max="0.5" 
+            step="0.01"
+          />
+        </label>
+      </div>
+    </div>
+</div>
