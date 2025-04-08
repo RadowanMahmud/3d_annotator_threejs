@@ -1,33 +1,80 @@
 <div class="container">
-    <div #rendererContainer class="scene-container" style="width: 100%; height: 100%; background-color: #f0f0f0;"></div>
-</div>
-<div class="form">
-    <div class="mode-indicator" *ngIf="isEditMode">
-        Editing Mode (Press SPACE to exit)
+  <div class="controls-container">
+    <div class="dropdown-container">
+      <select 
+        class="bounding-box-dropdown" 
+        [(ngModel)]="selectedBoundingBoxIndex"
+        (change)="onBoundingBoxSelect()">
+        <option value="" disabled>Select Bounding Box</option>
+        <option *ngFor="let box of boundingBoxEditData; let i = index" [value]="i">
+          {{ box.obj_id + ' - ' + box.category_name }}
+        </option>
+      </select>
     </div>
-    <div class="controls">
-      <div class="file-inputs">
-        <input 
-          type="file" 
-          (change)="onFileUpload($event, 'ply')"
-          accept=".ply"
-          class="file-input"
-          placeholder="Upload PLY File"
-        />
-        <input 
-          type="file" 
-          (change)="onFileUpload($event, 'glb')"
-          accept=".glb,.gltf"
-          class="file-input"
-          placeholder="Upload GLB/GLTF File"
-        />
-        <input 
-          type="file" 
-          (change)="onJSONFileUpload($event)"
-          accept=".json"
-          class="file-input"
-          placeholder="Upload JSON Bounding Box File"
-        />
+
+    <div class="file-controls">
+      <input 
+        type="file" 
+        (change)="onFileUpload($event, 'ply')"
+        accept=".ply"
+        class="file-input"
+        id="ply-file-input"
+      />
+      <label for="ply-file-input" class="file-input-label">Upload PLY File</label>
+      
+      <input 
+        type="file" 
+        (change)="onJSONFileUpload($event)"
+        accept=".json"
+        class="file-input"
+        id="json-file-input"
+      />
+      <label for="json-file-input" class="file-input-label">Upload JSON Bounding Box</label>
+    </div>
+  </div>
+
+  <div class="scene-container">
+    <div #rendererContainer style="width: 100%; height: 100%; background-color: #f0f0f0;"></div>
+  </div>
+
+  <div class="edit-panel" *ngIf="boundingBoxEditData.length > 0 && selectedBoundingBoxIndex !== null">
+    <div class="mode-indicator" *ngIf="isEditMode">
+      <span>Editing Mode (Press SPACE to exit)</span>
+    </div>
+    
+    <h4>Bounding Box Properties</h4>
+    <div class="property-section">
+      <div class="property-group">
+        <h5>Position</h5>
+        <div class="property-row">
+          <label>X: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].centerX" (change)="updateBoundingBox()" step="0.01"></label>
+          <label>Y: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].centerY" (change)="updateBoundingBox()" step="0.01"></label>
+          <label>Z: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].centerZ" (change)="updateBoundingBox()" step="0.01"></label>
+        </div>
+      </div>
+      
+      <div class="property-group">
+        <h5>Dimensions</h5>
+        <div class="property-row">
+          <label>Width: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].dimensionX" (change)="updateBoundingBox()" step="0.01"></label>
+          <label>Length: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].dimensionY" (change)="updateBoundingBox()" step="0.01"></label>
+          <label>Height: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].dimensionZ" (change)="updateBoundingBox()" step="0.01"></label>
+        </div>
+      </div>
+      
+      <div class="property-group">
+        <h5>Rotation (rad)</h5>
+        <div class="property-row">
+          <label>X: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].rotationX" (change)="updateBoundingBox()" step="0.01"></label>
+          <label>Y: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].rotationY" (change)="updateBoundingBox()" step="0.01"></label>
+          <label>Z: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].rotationZ" (change)="updateBoundingBox()" step="0.01"></label>
+        </div>
       </div>
     </div>
+    
+    <div class="edit-controls">
+      <button (click)="toggleEditMode()">{{ isEditMode ? 'Exit Edit Mode' : 'Enter Edit Mode' }}</button>
+      <button (click)="exportBoundingBoxesToJSON()">Export Boxes</button>
+    </div>
+  </div>
 </div>
