@@ -151,10 +151,12 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
   ngOnDestroy() {
   }
 
+  // TODO: Color not updating after select
   onBoundingBoxSelect() {
     if (!this.boundingBoxMesh || !(this.boundingBoxMesh instanceof THREE.Group)) {
       return;
     }
+    console.log(this.selectedBoundingBoxIndex)
     
     // Update the visibility and appearance of the bounding boxes
     const boxGroup = this.boundingBoxMesh as THREE.Group;
@@ -176,21 +178,11 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     }
     
     // Force material update
-    this.renderer.render(this.scene, this.camera);
+    setTimeout(() => {
+      this.renderer.render(this.scene, this.camera);
+    }, 10);
     
     console.log(`Selected bounding box: ${this.boundingBoxEditData[this.selectedBoundingBoxIndex].obj_id} - ${this.boundingBoxEditData[this.selectedBoundingBoxIndex].category_name}`);
-  }
-
-  toggleEditMode() {
-    this.isEditMode = !this.isEditMode;
-    
-    // When entering edit mode, disable trackball controls
-    if (this.isEditMode) {
-      this.trackballControls.enabled = false;
-      // Add code here to set up edit controls (keyboard, mouse, etc.)
-    } else {
-      this.trackballControls.enabled = true;
-    }
   }
 
   updateBoundingBox() {

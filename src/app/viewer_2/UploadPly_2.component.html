@@ -5,8 +5,8 @@
         class="bounding-box-dropdown" 
         [(ngModel)]="selectedBoundingBoxIndex"
         (change)="onBoundingBoxSelect()">
-        <option value="" disabled>Select Bounding Box</option>
-        <option *ngFor="let box of boundingBoxEditData; let i = index" [value]="i">
+        <option [ngValue]="null" disabled>Select Bounding Box</option>
+        <option *ngFor="let box of boundingBoxEditData; let i = index" [ngValue]="i">
           {{ box.obj_id + ' - ' + box.category_name }}
         </option>
       </select>
@@ -38,10 +38,6 @@
   </div>
 
   <div class="edit-panel" *ngIf="boundingBoxEditData.length > 0 && selectedBoundingBoxIndex !== null">
-    <div class="mode-indicator" *ngIf="isEditMode">
-      <span>Editing Mode (Press SPACE to exit)</span>
-    </div>
-    
     <h4>Bounding Box Properties</h4>
     <div class="property-section">
       <div class="property-group">
@@ -73,7 +69,6 @@
     </div>
     
     <div class="edit-controls">
-      <button (click)="toggleEditMode()">{{ isEditMode ? 'Exit Edit Mode' : 'Enter Edit Mode' }}</button>
       <button (click)="exportBoundingBoxesToJSON()">Export Boxes</button>
     </div>
   </div>
