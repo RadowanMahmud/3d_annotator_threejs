@@ -52,7 +52,7 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
   isEditMode = false;
   selectedBoundingBoxIndex : number = 0;
 
-
+  keyState: any;
 
 
   pointCloudStats: {
@@ -73,9 +73,9 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
   boundingBoxEditData: BoundingBoxEditData[] = [];
 
   ngOnInit() {
-    console.log('Initializing scene');
     this.initScene();
     this.animate();
+    this.setupEventListeners();
   }
   ngAfterViewInit() {
     console.log('After view init');
@@ -145,6 +145,124 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     
     // Render the scene
     this.renderer.render(this.scene, this.camera);
+  }
+
+  private setupEventListeners() {
+    // Store key states
+    this.keyState = {
+      KeyR: false,
+      KeyC: false,
+      KeyD: false,
+      KeyX: false,
+      KeyY: false,
+      KeyZ: false,
+      ArrowUp: false,
+      ArrowDown: false
+    };
+  
+    type ModeName = 'R' | 'C' | 'D';
+    type AxisName = 'X' | 'Y' | 'Z';
+    type DirectionName = 'Up' | 'Down';
+    
+    // Define actions based on key combinations with proper typing
+    const keyActions: Record<ModeName, Record<AxisName, Record<DirectionName, (idx: number) => void>>> = {
+      // Rotations (R + axis + direction)
+      R: {
+        X: {
+          Up: (idx) => { this.boundingBoxEditData[idx].rotationX += 0.01; },
+          Down: (idx) => { this.boundingBoxEditData[idx].rotationX -= 0.01; }
+        },
+        Y: {
+          Up: (idx) => { this.boundingBoxEditData[idx].rotationY += 0.01; },
+          Down: (idx) => { this.boundingBoxEditData[idx].rotationY -= 0.01; }
+        },
+        Z: {
+          Up: (idx) => { this.boundingBoxEditData[idx].rotationZ += 0.01; },
+          Down: (idx) => { this.boundingBoxEditData[idx].rotationZ -= 0.01; }
+        }
+      },
+      // Positions/Centers (C + axis + direction)
+      C: {
+        X: {
+          Up: (idx) => { this.boundingBoxEditData[idx].centerX += 0.01; },
+          Down: (idx) => { this.boundingBoxEditData[idx].centerX -= 0.01; }
+        },
+        Y: {
+          Up: (idx) => { this.boundingBoxEditData[idx].centerY += 0.01; },
+          Down: (idx) => { this.boundingBoxEditData[idx].centerY -= 0.01; }
+        },
+        Z: {
+          Up: (idx) => { this.boundingBoxEditData[idx].centerZ += 0.01; },
+          Down: (idx) => { this.boundingBoxEditData[idx].centerZ -= 0.01; }
+        }
+      },
+      // Dimensions (D + axis + direction)
+      D: {
+        X: {
+          Up: (idx) => { this.boundingBoxEditData[idx].dimensionX += 0.01; },
+          Down: (idx) => { this.boundingBoxEditData[idx].dimensionX -= 0.01; }
+        },
+        Y: {
+          Up: (idx) => { this.boundingBoxEditData[idx].dimensionY += 0.01; },
+          Down: (idx) => { this.boundingBoxEditData[idx].dimensionY -= 0.01; }
+        },
+        Z: {
+          Up: (idx) => { this.boundingBoxEditData[idx].dimensionZ += 0.01; },
+          Down: (idx) => { this.boundingBoxEditData[idx].dimensionZ -= 0.01; }
+        }
+      }
+    };
+  
+    // Map keyboard codes to action keys with explicit typing
+    const modeMap: Record<string, ModeName | undefined> = {
+      KeyR: 'R',
+      KeyC: 'C',
+      KeyD: 'D'
+    };
+    
+    const axisMap: Record<string, AxisName | undefined> = {
+      KeyX: 'X',
+      KeyY: 'Y',
+      KeyZ: 'Z'
+    };
+    
+    const directionMap: Record<string, DirectionName | undefined> = {
+      ArrowUp: 'Up',
+      ArrowDown: 'Down'
+    };
+  
+    // Handle key down events
+    window.addEventListener('keydown', (event) => {
+      // Update key state
+      if (this.keyState.hasOwnProperty(event.code)) {
+        this.keyState[event.code] = true;
+      }
+
+      // Process all key combinations in a type-safe way
+      for (const [modeCode, modeKey] of Object.entries(modeMap)) {
+        if (!this.keyState[modeCode] || !modeKey) continue;
+        
+        for (const [axisCode, axisKey] of Object.entries(axisMap)) {
+          if (!this.keyState[axisCode] || !axisKey) continue;
+          
+          for (const [dirCode, dirKey] of Object.entries(directionMap)) {
+            if (!this.keyState[dirCode] || !dirKey) continue;
+            
+            // Apply the action
+            keyActions[modeKey][axisKey][dirKey](this.selectedBoundingBoxIndex);
+          }
+        }
+      }
+      
+      this.updateBoundingBox();
+    });
+  
+    // Handle key up events to reset key states
+    window.addEventListener('keyup', (event) => {
+      if (this.keyState.hasOwnProperty(event.code)) {
+        this.keyState[event.code] = false;
+      }
+    });
   }
 
   // Method for disposing elements
@@ -257,10 +375,8 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     
     // Create rotation matrix (using three.js for the math)
     // Order: X -> Y -> Z rotation (intrinsic rotations)
-    const rotationMatrix = new THREE.Matrix4()
-      .makeRotationX(rotX)
-      .multiply(new THREE.Matrix4().makeRotationY(rotY))
-      .multiply(new THREE.Matrix4().makeRotationZ(rotZ));
+    const rotation = new THREE.Euler(rotX, rotY, rotZ, 'XYZ');
+    const rotationMatrix = new THREE.Matrix4().makeRotationFromEuler(rotation);
     
     // Apply rotation and translation to each corner
     return corners.map(corner => {
