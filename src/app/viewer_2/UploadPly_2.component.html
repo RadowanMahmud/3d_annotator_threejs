@@ -34,7 +34,7 @@
   </div>
 
   <div class="scene-container">
-    <div #rendererContainer style="width: 100%; height: 100%; background-color: #f0f0f0;"></div>
+    <div #rendererContainer style="width: 100%; height: 650px; background-color: #f0f0f0;"></div>
   </div>
 
   <div class="edit-panel" *ngIf="boundingBoxEditData.length > 0 && selectedBoundingBoxIndex !== null">
@@ -48,7 +48,7 @@
           <label>Z: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].centerZ" (change)="updateBoundingBox()" step="0.01"></label>
         </div>
       </div>
-      
+
       <div class="property-group">
         <h5>Dimensions</h5>
         <div class="property-row">
@@ -57,7 +57,7 @@
           <label>Height: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].dimensionZ" (change)="updateBoundingBox()" step="0.01"></label>
         </div>
       </div>
-      
+
       <div class="property-group">
         <h5>Rotation (rad)</h5>
         <div class="property-row">
@@ -67,7 +67,7 @@
         </div>
       </div>
     </div>
-    
+
     <div class="edit-controls">
       <button (click)="exportBoundingBoxesToJSON()">Export Boxes</button>
     </div>

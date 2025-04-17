@@ -12,6 +12,7 @@ interface BoundingBoxData {
   R_cam: number[][];
   dimensions: number[];
   bbox3D_cam: number[][];
+  euler_angles_xyz: number[]
 }
 
 interface BoundingBoxEditData {
@@ -312,11 +313,12 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     const boxData = this.boundingBoxEditData[this.selectedBoundingBoxIndex];
     
     // Calculate new vertices based on current properties
-    const vertices = this.calculateBoundingBoxVertices(
-      boxData.centerX, boxData.centerY, boxData.centerZ,
-      boxData.dimensionX, boxData.dimensionY, boxData.dimensionZ,
-      boxData.rotationX, boxData.rotationY, boxData.rotationZ
-    );
+    // const vertices = this.calculateBoundingBoxVertices(
+    //   boxData.centerX, boxData.centerY, boxData.centerZ,
+    //   boxData.dimensionX, boxData.dimensionY, boxData.dimensionZ,
+    //   boxData.rotationX, boxData.rotationY, boxData.rotationZ
+    // );
+    const vertices = this.createBoxVerticesFromParams(boxData);
     
     // Update the geometry of the selected bounding box
     if (this.boundingBoxMesh instanceof THREE.Group) {
@@ -348,48 +350,35 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     this.renderer.render(this.scene, this.camera);
   }
   
-  /**
-   * Calculates the 8 vertices of a bounding box based on center, dimensions and rotation
-   */
+
   private calculateBoundingBoxVertices(
     centerX: number, centerY: number, centerZ: number,
-    width: number, length: number, height: number,
+    height: number, width: number, length: number,  // Matches Python: [h, w, l]
     rotX: number, rotY: number, rotZ: number
   ): number[][] {
-    // Half dimensions
-    const hw = width / 2;
-    const hl = length / 2;
-    const hh = height / 2;
-    
-    // Define the 8 corners of the box (local coordinates)
-    const corners = [
-      [-hw, -hl, -hh], // 0: left, back, bottom
-      [hw, -hl, -hh],  // 1: right, back, bottom
-      [hw, hl, -hh],   // 2: right, front, bottom
-      [-hw, hl, -hh],  // 3: left, front, bottom
-      [-hw, -hl, hh],  // 4: left, back, top
-      [hw, -hl, hh],   // 5: right, back, top
-      [hw, hl, hh],    // 6: right, front, top
-      [-hw, hl, hh]    // 7: left, front, top
-    ];
-    
-    // Create rotation matrix (using three.js for the math)
-    // Order: X -> Y -> Z rotation (intrinsic rotations)
-    const rotation = new THREE.Euler(rotX, rotY, rotZ, 'XYZ');
+    // Match Python axis mapping: X=l, Y=h, Z=w
+    const center = new THREE.Vector3(centerX, centerY, centerZ);
+    const halfL = length / 2;  // X
+    const halfH = height / 2;  // Y
+    const halfW = width / 2;   // Z
+  
+    const rotation = new THREE.Euler(rotX, rotY, rotZ, 'ZYX');
     const rotationMatrix = new THREE.Matrix4().makeRotationFromEuler(rotation);
-    
-    // Apply rotation and translation to each corner
-    return corners.map(corner => {
-      const vertex = new THREE.Vector3(corner[0], corner[1], corner[2]);
-      vertex.applyMatrix4(rotationMatrix);
-      
-      // Translate to center position
-      vertex.x += centerX;
-      vertex.y += centerY;
-      vertex.z += centerZ;
-      
-      return [vertex.x, vertex.y, vertex.z];
-    });
+  
+    // Match Python vertex layout exactly
+    const vertices = [
+      new THREE.Vector3(-halfL, -halfH, -halfW), // v0
+      new THREE.Vector3( halfL, -halfH, -halfW), // v1
+      new THREE.Vector3( halfL,  halfH, -halfW), // v2
+      new THREE.Vector3(-halfL,  halfH, -halfW), // v3
+      new THREE.Vector3(-halfL, -halfH,  halfW), // v4
+      new THREE.Vector3( halfL, -halfH,  halfW), // v5
+      new THREE.Vector3( halfL,  halfH,  halfW), // v6
+      new THREE.Vector3(-halfL,  halfH,  halfW)  // v7
+    ];
+  
+    return vertices.map(v => v.clone().applyMatrix4(rotationMatrix).add(center))
+                   .map(v => [v.x, v.y, v.z]);
   }
   
 
@@ -548,21 +537,52 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
         const bbox3D = bboxData.bbox3D_cam;
         
         // Store bounding box edit data
+        const v0 = new THREE.Vector3(...bbox3D[0]);
+        const v1 = new THREE.Vector3(...bbox3D[1]);
+        const v3 = new THREE.Vector3(...bbox3D[3]);
+        const v4 = new THREE.Vector3(...bbox3D[4]);
+      
+        // Axes from v0
+        const xAxis = new THREE.Vector3().subVectors(v1, v0).normalize(); // length
+        const yAxis = new THREE.Vector3().subVectors(v3, v0).normalize(); // height
+        const zAxis = new THREE.Vector3().subVectors(v4, v0).normalize(); // width
+      
+        // Reconstruct rotation matrix (3x3)
+        const rotationMatrix = new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis);
+        const euler = new THREE.Euler().setFromRotationMatrix(rotationMatrix, 'ZYX');
+      
+        // Compute center as average of all vertices
+        const center = bbox3D.reduce((acc, v) => {
+          acc[0] += v[0]; acc[1] += v[1]; acc[2] += v[2];
+          return acc;
+        }, [0, 0, 0]).map(c => c / 8);
+      
+        // Compute dimensions from distances
+        const width = v1.distanceTo(v0);  // X
+        const length = v3.distanceTo(v0);  // Y
+        const height  = v4.distanceTo(v0);  // Z
+
+        const obj_id =  bboxData.obj_id;
+        const category_name = bboxData.category_name;
+      
+        // Push reconstructed data
         this.boundingBoxEditData.push({
-          obj_id: bboxData.obj_id,
-          category_name: bboxData.category_name,
-          centerX: bboxData.center_cam[0],
-          centerY: bboxData.center_cam[1],
-          centerZ: bboxData.center_cam[2],
-          dimensionX: bboxData.dimensions[0],
-          dimensionY: bboxData.dimensions[1],
-          dimensionZ: bboxData.dimensions[2],
-          rotationX: this.extractRotationX(bboxData.R_cam),
-          rotationY: this.extractRotationY(bboxData.R_cam),
-          rotationZ: this.extractRotationZ(bboxData.R_cam)
+          obj_id,
+          category_name,
+          centerX: center[0],
+          centerY: center[1],
+          centerZ: center[2],
+          dimensionX: length,
+          dimensionY: height,
+          dimensionZ: width,
+          rotationX: euler.x,
+          rotationY: euler.y,
+          rotationZ: euler.z
         });
         
         // Create and add individual bounding box
+        // const vertices = this.createBoxVerticesFromParams(this.boundingBoxEditData[i]);
+        // const boxMesh = this.createIndividualBoundingBoxMesh(vertices, i === 0);
         const boxMesh = this.createIndividualBoundingBoxMesh(bbox3D, i === 0);
         boxGroup.add(boxMesh);
       }
@@ -626,5 +646,18 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
   extractRotationZ(R: any) {
     // Extract rotation around Z-axis (roll)
     return Math.atan2(R[1][0], R[0][0]);
+  }
+
+  normalizeVector(vec: any) {
+    const length = Math.sqrt(vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2]);
+    return [vec[0]/length, vec[1]/length, vec[2]/length];
+  }
+
+  createBoxVerticesFromParams(boxData: BoundingBoxEditData): number[][] {
+    return this.calculateBoundingBoxVertices(
+      boxData.centerX, boxData.centerY, boxData.centerZ,
+      boxData.dimensionX, boxData.dimensionY, boxData.dimensionZ,
+      boxData.rotationX, boxData.rotationY, boxData.rotationZ
+    );
   }
 }
