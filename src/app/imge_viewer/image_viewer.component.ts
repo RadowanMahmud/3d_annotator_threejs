@@ -1,5 +1,5 @@
 // cube-viewer.component.ts
-import { Component, OnInit, ViewChild, ElementRef, Inject, Input } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, Inject, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CubeRendererService } from '../services/cube_renderer_service';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -23,7 +23,7 @@ interface CameraParams {
   templateUrl: './image_viewer.component.html',
   styleUrls: ['./image_viewer.component.css'],
 })
-export class ImageViewerComponent implements OnInit {
+export class ImageViewerComponent implements OnInit, OnChanges  {
   @ViewChild('cubeCanvas', { static: true }) canvasElement!: ElementRef<HTMLCanvasElement>;
   @Input() cubeList: any | null = null;
   
@@ -31,7 +31,7 @@ export class ImageViewerComponent implements OnInit {
   error: string | null = null;
   sceneDir = 'assets/scene_data'; // Default scene directory path
   isGround = false; // Default to use predicted bounding boxes
-camera_intrinsic: number[][] | null = null;
+  camera_intrinsic: number[][] | null = null;
   uploadedImage: HTMLImageElement | null = null;
 
   constructor(@Inject(CubeRendererService) private cubeRenderer: CubeRendererService) {}
@@ -39,6 +39,16 @@ camera_intrinsic: number[][] | null = null;
   ngOnInit(): void {
     // We'll wait for the image and cubeList before rendering
   }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    console.log(changes)
+    // Check if cubeList changed and is not the first change (initialization)
+    if (changes['cubeList'] && this.uploadedImage && this.camera_intrinsic) {
+      // Only draw cubes if we have the required data (image and camera params)
+      this.drawCube();
+    }
+  }
+  
 
 
   drawCube(): void {
