@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { GLTFLoader, PLYLoader } from 'three/examples/jsm/Addons.js';
 import { CommonModule } from '@angular/common';
 import { TrackballControls } from 'three/examples/jsm/Addons.js';
+import { ImageViewerComponent } from "../imge_viewer/image_viewer.component";
 
 interface BoundingBoxData {
   obj_id: string;
@@ -31,7 +32,7 @@ interface BoundingBoxEditData {
 
 @Component({
     selector: 'app-ply-two-viewer',
-    imports: [CommonModule, FormsModule],
+    imports: [CommonModule, FormsModule, ImageViewerComponent],
     standalone: true,
     templateUrl: './UploadPly_2.component.html',
     styleUrl: './UploadPly_2.component.css'
@@ -48,10 +49,11 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
   private pointCloud: THREE.Points | null = null;
   private boundingBoxMesh: THREE.Group | THREE.LineSegments | null = null;
 
-
   private axesHelper!: THREE.AxesHelper;
   isEditMode = false;
   selectedBoundingBoxIndex : number = 0;
+
+  boundingJsonBoxData: BoundingBoxData[] = [];
 
   keyState: any;
 
@@ -157,59 +159,59 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       KeyX: false,
       KeyY: false,
       KeyZ: false,
-      ArrowUp: false,
-      ArrowDown: false
+      ArrowRight: false,
+      ArrowLeft: false
     };
   
     type ModeName = 'R' | 'C' | 'D';
     type AxisName = 'X' | 'Y' | 'Z';
-    type DirectionName = 'Up' | 'Down';
+    type DirectionName = 'Right' | 'Left';
     
     // Define actions based on key combinations with proper typing
     const keyActions: Record<ModeName, Record<AxisName, Record<DirectionName, (idx: number) => void>>> = {
       // Rotations (R + axis + direction)
       R: {
         X: {
-          Up: (idx) => { this.boundingBoxEditData[idx].rotationX += 0.01; },
-          Down: (idx) => { this.boundingBoxEditData[idx].rotationX -= 0.01; }
+          Right: (idx) => { this.boundingBoxEditData[idx].rotationX += 0.01; },
+          Left: (idx) => { this.boundingBoxEditData[idx].rotationX -= 0.01; }
         },
         Y: {
-          Up: (idx) => { this.boundingBoxEditData[idx].rotationY += 0.01; },
-          Down: (idx) => { this.boundingBoxEditData[idx].rotationY -= 0.01; }
+          Right: (idx) => { this.boundingBoxEditData[idx].rotationY += 0.01; },
+          Left: (idx) => { this.boundingBoxEditData[idx].rotationY -= 0.01; }
         },
         Z: {
-          Up: (idx) => { this.boundingBoxEditData[idx].rotationZ += 0.01; },
-          Down: (idx) => { this.boundingBoxEditData[idx].rotationZ -= 0.01; }
+          Right: (idx) => { this.boundingBoxEditData[idx].rotationZ += 0.01; },
+          Left: (idx) => { this.boundingBoxEditData[idx].rotationZ -= 0.01; }
         }
       },
       // Positions/Centers (C + axis + direction)
       C: {
         X: {
-          Up: (idx) => { this.boundingBoxEditData[idx].centerX += 0.01; },
-          Down: (idx) => { this.boundingBoxEditData[idx].centerX -= 0.01; }
+          Right: (idx) => { this.boundingBoxEditData[idx].centerX += 0.01; },
+          Left: (idx) => { this.boundingBoxEditData[idx].centerX -= 0.01; }
         },
         Y: {
-          Up: (idx) => { this.boundingBoxEditData[idx].centerY += 0.01; },
-          Down: (idx) => { this.boundingBoxEditData[idx].centerY -= 0.01; }
+          Right: (idx) => { this.boundingBoxEditData[idx].centerY += 0.01; },
+          Left: (idx) => { this.boundingBoxEditData[idx].centerY -= 0.01; }
         },
         Z: {
-          Up: (idx) => { this.boundingBoxEditData[idx].centerZ += 0.01; },
-          Down: (idx) => { this.boundingBoxEditData[idx].centerZ -= 0.01; }
+          Right: (idx) => { this.boundingBoxEditData[idx].centerZ += 0.01; },
+          Left: (idx) => { this.boundingBoxEditData[idx].centerZ -= 0.01; }
         }
       },
       // Dimensions (D + axis + direction)
       D: {
         X: {
-          Up: (idx) => { this.boundingBoxEditData[idx].dimensionX += 0.01; },
-          Down: (idx) => { this.boundingBoxEditData[idx].dimensionX -= 0.01; }
+          Right: (idx) => { this.boundingBoxEditData[idx].dimensionX += 0.01; },
+          Left: (idx) => { this.boundingBoxEditData[idx].dimensionX -= 0.01; }
         },
         Y: {
-          Up: (idx) => { this.boundingBoxEditData[idx].dimensionY += 0.01; },
-          Down: (idx) => { this.boundingBoxEditData[idx].dimensionY -= 0.01; }
+          Right: (idx) => { this.boundingBoxEditData[idx].dimensionY += 0.01; },
+          Left: (idx) => { this.boundingBoxEditData[idx].dimensionY -= 0.01; }
         },
         Z: {
-          Up: (idx) => { this.boundingBoxEditData[idx].dimensionZ += 0.01; },
-          Down: (idx) => { this.boundingBoxEditData[idx].dimensionZ -= 0.01; }
+          Right: (idx) => { this.boundingBoxEditData[idx].dimensionZ += 0.01; },
+          Left: (idx) => { this.boundingBoxEditData[idx].dimensionZ -= 0.01; }
         }
       }
     };
@@ -228,8 +230,8 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     };
     
     const directionMap: Record<string, DirectionName | undefined> = {
-      ArrowUp: 'Up',
-      ArrowDown: 'Down'
+      ArrowRight: 'Right',
+      ArrowLeft: 'Left'
     };
   
     // Handle key down events
@@ -312,12 +314,6 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     // Get the selected bounding box data
     const boxData = this.boundingBoxEditData[this.selectedBoundingBoxIndex];
     
-    // Calculate new vertices based on current properties
-    // const vertices = this.calculateBoundingBoxVertices(
-    //   boxData.centerX, boxData.centerY, boxData.centerZ,
-    //   boxData.dimensionX, boxData.dimensionY, boxData.dimensionZ,
-    //   boxData.rotationX, boxData.rotationY, boxData.rotationZ
-    // );
     const vertices = this.createBoxVerticesFromParams(boxData);
     
     // Update the geometry of the selected bounding box
@@ -348,6 +344,8 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     
     // Render the updated scene
     this.renderer.render(this.scene, this.camera);
+
+    this.boundingJsonBoxData[this.selectedBoundingBoxIndex].bbox3D_cam = vertices
   }
   
 
@@ -520,7 +518,7 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
   
     try {
       const data: BoundingBoxData[] = JSON.parse(jsonContent);
-      
+      this.boundingJsonBoxData = data;
       if (data.length === 0) {
         console.warn('No bounding box data found in JSON');
         return;
@@ -630,27 +628,6 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     });
     
     return new THREE.LineSegments(geometry, material);
-  }
-
-  // Helper methods to extract individual rotation angles from a rotation matrix
-  extractRotationX(R: any) {
-    // Extract rotation around X-axis (pitch)
-    return Math.atan2(R[2][1], R[2][2]);
-  }
-
-  extractRotationY(R: any) {
-    // Extract rotation around Y-axis (yaw)
-    return Math.atan2(-R[2][0], Math.sqrt(R[2][1]*R[2][1] + R[2][2]*R[2][2]));
-  }
-
-  extractRotationZ(R: any) {
-    // Extract rotation around Z-axis (roll)
-    return Math.atan2(R[1][0], R[0][0]);
-  }
-
-  normalizeVector(vec: any) {
-    const length = Math.sqrt(vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2]);
-    return [vec[0]/length, vec[1]/length, vec[2]/length];
   }
 
   createBoxVerticesFromParams(boxData: BoundingBoxEditData): number[][] {

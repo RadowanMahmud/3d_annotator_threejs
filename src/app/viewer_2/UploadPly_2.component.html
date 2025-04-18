@@ -37,39 +37,45 @@
     <div #rendererContainer style="width: 100%; height: 650px; background-color: #f0f0f0;"></div>
   </div>
 
-  <div class="edit-panel" *ngIf="boundingBoxEditData.length > 0 && selectedBoundingBoxIndex !== null">
-    <h4>Bounding Box Properties</h4>
-    <div class="property-section">
-      <div class="property-group">
-        <h5>Position</h5>
-        <div class="property-row">
-          <label>X: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].centerX" (change)="updateBoundingBox()" step="0.01"></label>
-          <label>Y: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].centerY" (change)="updateBoundingBox()" step="0.01"></label>
-          <label>Z: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].centerZ" (change)="updateBoundingBox()" step="0.01"></label>
+  <div class="bottom-container">
+    <div class="edit-panel" *ngIf="boundingBoxEditData.length > 0 && selectedBoundingBoxIndex !== null">
+      <h4>Bounding Box Properties</h4>
+      <div class="property-section">
+        <div class="property-group">
+          <h5>Position</h5>
+          <div class="property-row">
+            <label>X: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].centerX" (change)="updateBoundingBox()" step="0.01"></label>
+            <label>Y: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].centerY" (change)="updateBoundingBox()" step="0.01"></label>
+            <label>Z: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].centerZ" (change)="updateBoundingBox()" step="0.01"></label>
+          </div>
+        </div>
+
+        <div class="property-group">
+          <h5>Dimensions</h5>
+          <div class="property-row">
+            <label>Width: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].dimensionX" (change)="updateBoundingBox()" step="0.01"></label>
+            <label>Length: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].dimensionY" (change)="updateBoundingBox()" step="0.01"></label>
+            <label>Height: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].dimensionZ" (change)="updateBoundingBox()" step="0.01"></label>
+          </div>
+        </div>
+
+        <div class="property-group">
+          <h5>Rotation (rad)</h5>
+          <div class="property-row">
+            <label>X: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].rotationX" (change)="updateBoundingBox()" step="0.01"></label>
+            <label>Y: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].rotationY" (change)="updateBoundingBox()" step="0.01"></label>
+            <label>Z: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].rotationZ" (change)="updateBoundingBox()" step="0.01"></label>
+          </div>
         </div>
       </div>
 
-      <div class="property-group">
-        <h5>Dimensions</h5>
-        <div class="property-row">
-          <label>Width: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].dimensionX" (change)="updateBoundingBox()" step="0.01"></label>
-          <label>Length: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].dimensionY" (change)="updateBoundingBox()" step="0.01"></label>
-          <label>Height: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].dimensionZ" (change)="updateBoundingBox()" step="0.01"></label>
-        </div>
-      </div>
-
-      <div class="property-group">
-        <h5>Rotation (rad)</h5>
-        <div class="property-row">
-          <label>X: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].rotationX" (change)="updateBoundingBox()" step="0.01"></label>
-          <label>Y: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].rotationY" (change)="updateBoundingBox()" step="0.01"></label>
-          <label>Z: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].rotationZ" (change)="updateBoundingBox()" step="0.01"></label>
-        </div>
+      <div class="edit-controls">
+        <button (click)="exportBoundingBoxesToJSON()">Export Boxes</button>
       </div>
     </div>
 
-    <div class="edit-controls">
-      <button (click)="exportBoundingBoxesToJSON()">Export Boxes</button>
+    <div class="image-viewer-container">
+      <app-image-viewer [cubeList]="boundingJsonBoxData"></app-image-viewer>
     </div>
   </div>
 </div>

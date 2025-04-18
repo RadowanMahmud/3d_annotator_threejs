@@ -1,0 +1,68 @@
+<!-- cube-viewer.component.html -->
+<div class="cube-viewer-container">
+    <div class="controls">
+      <div class="form-group">
+        <label for="sceneDir">Scene Directory:</label>
+        <input 
+          type="text" 
+          id="sceneDir" 
+          [value]="sceneDir" 
+          (change)="onDirectoryChange($event)"
+          placeholder="Enter scene directory path"
+        >
+      </div>
+      
+      <div class="file-inputs-container">
+        <!-- Image Upload Button -->
+        <input 
+          type="file" 
+          (change)="onImageUpload($event)"
+          accept="image/*"
+          class="file-input"
+          id="image-file-input"
+        />
+        <label for="image-file-input" class="file-input-label">Upload Image</label>
+        
+        <!-- Camera Params Upload Button (renamed for clarity) -->
+        <input 
+          type="file" 
+          (change)="onJSONCameraParamsFileUpload($event)"
+          accept=".json"
+          class="file-input"
+          id="camera-params-input"
+        />
+        <label for="camera-params-input" class="file-input-label">Upload Camera Params</label>
+      </div>
+
+      <div class="toggle-container">
+        <label>
+          <input 
+            type="checkbox" 
+            [checked]="isGround" 
+            (change)="toggleGroundTruth()"
+          >
+          Use Ground Truth Bounding Boxes
+        </label>
+      </div>
+      
+      <button (click)="drawCube()" [disabled]="isLoading ">
+        Draw Cubes
+      </button>
+      
+      <button (click)="saveImage()" [disabled]="isLoading || error">
+        Save Image
+      </button>
+    </div>
+    
+    <div class="canvas-container">
+      <div *ngIf="isLoading" class="loading">
+        Loading...
+      </div>
+      
+      <div *ngIf="error" class="error">
+        {{ error }}
+      </div>
+      
+      <canvas #cubeCanvas></canvas>
+    </div>
+  </div>
