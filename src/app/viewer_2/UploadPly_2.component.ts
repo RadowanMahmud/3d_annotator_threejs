@@ -440,7 +440,64 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
   }
   
 
-  exportBoundingBoxesToJSON() {}
+  exportBoundingBoxesToJSON() {
+    for (let i = 0; i < this.boundingJsonBoxData.length; i++) {
+      const bboxData = this.boundingJsonBoxData[i];
+      
+      // Extract vertices from bbox3D_cam
+      const bbox3D = bboxData.bbox3D_cam;
+      
+      // Store bounding box edit data
+      const v0 = new THREE.Vector3(...bbox3D[0]);
+      const v1 = new THREE.Vector3(...bbox3D[1]);
+      const v3 = new THREE.Vector3(...bbox3D[3]);
+      const v4 = new THREE.Vector3(...bbox3D[4]);
+    
+      // Axes from v0
+      const xAxis = new THREE.Vector3().subVectors(v1, v0).normalize(); // length
+      const yAxis = new THREE.Vector3().subVectors(v3, v0).normalize(); // height
+      const zAxis = new THREE.Vector3().subVectors(v4, v0).normalize(); // width
+    
+      // Reconstruct rotation matrix (3x3)
+      const rotationMatrix = new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis);
+    
+      // Compute center as average of all vertices
+      const center = bbox3D.reduce((acc, v) => {
+        acc[0] += v[0]; acc[1] += v[1]; acc[2] += v[2];
+        return acc;
+      }, [0, 0, 0]).map(c => c / 8);
+    
+      // Compute dimensions from distances
+      const width = v1.distanceTo(v0);  // X
+      const length = v3.distanceTo(v0);  // Y
+      const height  = v4.distanceTo(v0);  // Z
+
+      const obj_id =  bboxData.obj_id;
+      const category_name = bboxData.category_name;
+
+      this.boundingJsonBoxData[i].center_cam = center
+      this.boundingJsonBoxData[i].dimensions = [length, width, height]
+      this.boundingJsonBoxData[i].R_cam = [
+        [rotationMatrix.elements[0], rotationMatrix.elements[4], rotationMatrix.elements[8]],
+        [rotationMatrix.elements[1], rotationMatrix.elements[5], rotationMatrix.elements[9]],
+        [rotationMatrix.elements[2], rotationMatrix.elements[6], rotationMatrix.elements[10]]
+      ];
+    }
+    const jsonContent = JSON.stringify(this.boundingJsonBoxData, null, 2);
+  
+    const blob = new Blob([jsonContent], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    const id = this.decoded_path.split('/')[this.decoded_path.split('/').length - 1]
+    link.download = id + '_3dbox_refined.json';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
 
   // code to handle file uploads
   onFileUpload(event: Event, type: string){
