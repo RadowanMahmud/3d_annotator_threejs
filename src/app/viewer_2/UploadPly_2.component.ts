@@ -483,20 +483,48 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
         [rotationMatrix.elements[2], rotationMatrix.elements[6], rotationMatrix.elements[10]]
       ];
     }
+
+
+    // Call the API to save the file on the server
     const jsonContent = JSON.stringify(this.boundingJsonBoxData, null, 2);
+    const id = this.decoded_path.split('/')[this.decoded_path.split('/').length - 1];
+    
+    // Call the API to save the file on the server
+    fetch(`http://localhost:3000/api/save/${id}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: jsonContent
+    })
+    .then(response => response.json())
+    .then(result => {
+      if (result.success) {
+        console.log('File saved successfully on server:', result.path);
+        alert('file saved')
+        // You could display a success message to the user here
+      } else {
+        console.error('Error saving file:', result.error);
+        // You could display an error message to the user here
+      }
+    })
+    .catch(error => {
+      console.error('Failed to communicate with server:', error);
+      // You could display a network error message to the user here
+    });
   
-    const blob = new Blob([jsonContent], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
+    // const blob = new Blob([jsonContent], { type: 'application/json' });
+    // const url = URL.createObjectURL(blob);
     
-    const link = document.createElement('a');
-    link.href = url;
-    const id = this.decoded_path.split('/')[this.decoded_path.split('/').length - 1]
-    link.download = id + '_3dbox_refined.json';
+    // const link = document.createElement('a');
+    // link.href = url;
+    // const id = this.decoded_path.split('/')[this.decoded_path.split('/').length - 1]
+    // link.download = id + '_3dbox_refined.json';
     
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    // document.body.appendChild(link);
+    // link.click();
+    // document.body.removeChild(link);
+    // URL.revokeObjectURL(url);
   }
 
   // code to handle file uploads
