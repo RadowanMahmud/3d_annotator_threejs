@@ -398,6 +398,8 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     this.renderer.render(this.scene, this.camera);
 
     this.boundingJsonBoxData[this.selectedBoundingBoxIndex].bbox3D_cam = vertices
+
+    this.boundingJsonBoxData = [...this.boundingJsonBoxData]
   }
   
 

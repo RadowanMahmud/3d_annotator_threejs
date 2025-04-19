@@ -4,7 +4,7 @@ import { CubeRendererService } from '../services/cube_renderer_service';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Observable } from 'rxjs';
-
+import { ChangeDetectionStrategy } from '@angular/core';
 interface Cube {
   bbox3D_cam: number[][];
   category_name: string;
@@ -22,6 +22,7 @@ interface CameraParams {
   standalone: true,
   templateUrl: './image_viewer.component.html',
   styleUrls: ['./image_viewer.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ImageViewerComponent implements OnInit, OnChanges  {
   @ViewChild('cubeCanvas', { static: true }) canvasElement!: ElementRef<HTMLCanvasElement>;
@@ -99,6 +100,7 @@ export class ImageViewerComponent implements OnInit, OnChanges  {
         },
         error: (err) => {
           console.error('Error rendering cube:', err);
+          console.log(this.cubeList)
           this.error = 'Failed to render cube. Please check the console for details.';
           this.isLoading = false;
         }
