@@ -34,6 +34,7 @@
         <select 
           class="bounding-box-dropdown" 
           [(ngModel)]="selectedBoundingBoxIndex"
+          (keydown)="handleSelectKeyDown($event)"
           (change)="onBoundingBoxSelect()">
           <option [ngValue]="null" disabled>Select Bounding Box</option>
           <option *ngFor="let box of boundingBoxEditData; let i = index" [ngValue]="i">

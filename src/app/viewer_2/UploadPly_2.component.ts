@@ -94,6 +94,12 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     this.animate();
     this.setupEventListeners();
   }
+  handleSelectKeyDown(event: KeyboardEvent) {
+    if (['ArrowUp', 'ArrowLeft', 'ArrowRight', 'ArrowDown'].includes(event.key)) {
+      event.preventDefault();
+      // Handle the arrow key press as needed
+    }
+  }
   loadDataFromPath(path: string) {
     try {
       // Decode the path if it was URL-encoded
