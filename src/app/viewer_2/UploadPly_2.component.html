@@ -1,16 +1,6 @@
 <div class="container">
-  <div class="controls-container">
-    <div class="dropdown-container">
-      <select 
-        class="bounding-box-dropdown" 
-        [(ngModel)]="selectedBoundingBoxIndex"
-        (change)="onBoundingBoxSelect()">
-        <option [ngValue]="null" disabled>Select Bounding Box</option>
-        <option *ngFor="let box of boundingBoxEditData; let i = index" [ngValue]="i">
-          {{ box.obj_id + ' - ' + box.category_name }}
-        </option>
-      </select>
-    </div>
+  <!-- <div class="controls-container">
+
 
     <div class="file-controls">
       <input 
@@ -31,14 +21,26 @@
       />
       <label for="json-file-input" class="file-input-label">Upload JSON Bounding Box</label>
     </div>
-  </div>
+  </div> -->
 
   <div class="scene-container">
-    <div #rendererContainer style="width: 100%; height: 650px; background-color: #f0f0f0;"></div>
+    <div #rendererContainer style="width: 100%; height: 42vh+; background-color: #f0f0f0;"></div>
   </div>
 
   <div class="bottom-container">
+
     <div class="edit-panel" *ngIf="boundingBoxEditData.length > 0 && selectedBoundingBoxIndex !== null">
+      <div class="dropdown-container">
+        <select 
+          class="bounding-box-dropdown" 
+          [(ngModel)]="selectedBoundingBoxIndex"
+          (change)="onBoundingBoxSelect()">
+          <option [ngValue]="null" disabled>Select Bounding Box</option>
+          <option *ngFor="let box of boundingBoxEditData; let i = index" [ngValue]="i">
+            {{ box.obj_id + ' - ' + box.category_name }}
+          </option>
+        </select>
+      </div>
       <h4>Bounding Box Properties</h4>
       <div class="property-section">
         <div class="property-group">

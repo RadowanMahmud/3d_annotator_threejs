@@ -60,7 +60,7 @@
 
 .scene-container {
   flex: 1;
-  min-height: 650px;
+  min-height: 42vh;
   border: 1px solid #ddd;
   border-radius: 4px;
   overflow: hidden;
