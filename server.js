@@ -21,6 +21,70 @@ app.get('/', (req, res) => {
     res.send("Welcome to root URL of Server");
 });
 
+// GET endpoint to retrieve directory structure
+app.get('/api/directory', (req, res) => {
+    try {
+        const assetsDir = path.join(__dirname, 'public', 'assets');
+        
+        // Create directory if it doesn't exist
+        if (!fs.existsSync(assetsDir)) {
+            fs.mkdirSync(assetsDir, { recursive: true });
+        }
+        
+        // Recursive function to build directory structure
+        const buildDirectoryStructure = (dir, basePath = '', level = 0) => {
+            const items = fs.readdirSync(dir);
+            const structure = [];
+            
+            items.forEach(item => {
+                const itemPath = path.join(dir, item);
+                const relativePath = path.join(basePath, item);
+                const stats = fs.statSync(itemPath);
+                const isFolder = stats.isDirectory();
+                
+                // Check if the folder has a 3dbox_refined.json file
+                let has3dBoxRefined = false;
+                if (isFolder) {
+                    const files = fs.readdirSync(itemPath);
+                    has3dBoxRefined = files.some(file => file.endsWith('3dbox_refined.json'));
+                }
+                
+                const folderItem = {
+                    name: item,
+                    path: 'assets/' + relativePath.replace(/\\/g, '/'),
+                    isFolder: isFolder,
+                    level: level,
+                    has3dBoxRefined: has3dBoxRefined
+                };
+                
+                if (isFolder) {
+                    folderItem.isExpanded = false; // Auto-expand first level
+                    folderItem.children = buildDirectoryStructure(itemPath, relativePath, level + 1);
+                }
+                
+                structure.push(folderItem);
+            });
+            
+            return structure;
+        };
+        
+        // Build the directory structure starting from assets folder
+        const structure = buildDirectoryStructure(assetsDir, '', 0);
+        
+        res.status(200).json({
+            success: true,
+            structure: structure
+        });
+    } catch (error) {
+        console.error('Error reading directory structure:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to read directory structure',
+            details: error.message
+        });
+    }
+});
+
 // POST endpoint to save JSON data
 app.post('/api/save/:id', (req, res) => {
     try {
@@ -37,7 +101,7 @@ app.post('/api/save/:id', (req, res) => {
         }
         
         // Define save directory
-        const saveDirectory = path.join(__dirname, 'public', 'assests', id);
+        const saveDirectory = path.join(__dirname, 'public', 'assets', id);
         
         // Create directory structure if it doesn't exist
         if (!fs.existsSync(saveDirectory)) {
@@ -45,7 +109,7 @@ app.post('/api/save/:id', (req, res) => {
         }
         
         // Create filename and path
-        const filename = `3dbox_refined.json`;
+        const filename = `${id}_3dbox_refined.json`;
         const filePath = path.join(saveDirectory, filename);
         
         // Write the file
