@@ -5,6 +5,8 @@ import { GLTFLoader, PLYLoader } from 'three/examples/jsm/Addons.js';
 import { CommonModule } from '@angular/common';
 import { TrackballControls } from 'three/examples/jsm/Addons.js';
 import { ImageViewerComponent } from "../imge_viewer/image_viewer.component";
+import { ActivatedRoute } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 
 interface BoundingBoxData {
   obj_id: string;
@@ -57,6 +59,10 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
 
   keyState: any;
 
+  constructor(
+    private route: ActivatedRoute, 
+    private http: HttpClient
+  ) {}
 
   pointCloudStats: {
     points: number;
@@ -74,11 +80,57 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
   startDragAngle: any;
   // New property for bounding box editing
   boundingBoxEditData: BoundingBoxEditData[] = [];
+  basePath: any;
+  decoded_path: any;
+
 
   ngOnInit() {
+    this.route.paramMap.subscribe(params => {
+      const encodedPath = params.get('path');
+      this.basePath = encodedPath ? decodeURIComponent(encodedPath) : '';
+      this.loadDataFromPath(this.basePath);
+    });
     this.initScene();
     this.animate();
     this.setupEventListeners();
+  }
+  loadDataFromPath(path: string) {
+    try {
+      // Decode the path if it was URL-encoded
+      const decodedPath = decodeURIComponent(path);
+      this.decoded_path = decodedPath
+      
+      fetch(`${decodedPath}/depth_scene.ply`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`Failed to load file: ${response.status} ${response.statusText}`);
+          }
+          return response.arrayBuffer(); // Get as arrayBuffer instead of json
+        })
+        .then(arrayBuffer => {
+          this.loadPLYFile(arrayBuffer); // Pass to your PLY loader function
+        })
+        .catch(error => {
+          console.error('Error loading or parsing the file:', error);
+        });
+      // Use fetch API to load the file from the path
+      fetch(`${decodedPath}/3dbbox.json`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`Failed to load file: ${response.status} ${response.statusText}`);
+          }
+          return response.json();
+        })
+        .then(jsonData => {
+          this.loadBoundingBoxFromJSON(JSON.stringify(jsonData));
+        })
+        .catch(error => {
+          console.error('Error loading or parsing the file:', error);
+        });
+
+    } catch (error) {
+      console.error('Error accessing file:', error);
+    }
   }
   ngAfterViewInit() {
     console.log('After view init');

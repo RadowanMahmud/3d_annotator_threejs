@@ -1,0 +1,65 @@
+<div class="folder-explorer-container">
+    <h2>Folder Explorer</h2>
+    
+    <div class="folder-selector">
+      <input
+        type="file"
+        #folderInput
+        webkitdirectory
+        directory
+        (change)="onFolderSelected($event)"
+        style="display: none">
+      <button (click)="folderInput.click()" class="select-button">
+        Select Folder
+      </button>
+      <span *ngIf="selectedFolderPath" class="selected-path">
+        Selected: {{ selectedFolderPath }}
+      </span>
+    </div>
+    
+    <div *ngIf="folderStructure.length > 0" class="folder-table-container">
+      <table class="folder-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Path</th>
+            <th>Type</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <ng-container *ngFor="let item of flattenedFolderStructure">
+            <tr [style.padding-left.px]="item.level * 20">
+              <td>
+                <span class="indent" [style.width.px]="item.level * 20"></span>
+                <span class="folder-icon" *ngIf="item.isFolder">📁</span>
+                <span class="file-icon" *ngIf="!item.isFolder">📄</span>
+                {{ item.name }}
+              </td>
+              <td>{{ item.path }}</td>
+              <td>{{ item.isFolder ? 'Folder' : 'File' }}</td>
+              <td>
+                <!-- Toggle button for folders with children -->
+                <button *ngIf="item.isFolder && item.children?.length" 
+                        (click)="toggleFolder(item)"
+                        class="toggle-button">
+                  {{ item.isExpanded ? 'Collapse' : 'Expand' }}
+                </button>
+                
+                <!-- Open Dashboard button only for first-level folders (level = 1) -->
+                <button *ngIf="item.isFolder && item.level === 1" 
+                        (click)="openDashboard(item)"
+                        class="dashboard-button">
+                  Open Dashboard
+                </button>
+              </td>
+            </tr>
+          </ng-container>
+        </tbody>
+      </table>
+    </div>
+    
+    <div *ngIf="folderStructure.length === 0 && selectedFolderPath" class="empty-state">
+      No folders found in the selected directory.
+    </div>
+  </div>

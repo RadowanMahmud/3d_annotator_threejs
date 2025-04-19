@@ -75,7 +75,8 @@
     </div>
 
     <div class="image-viewer-container">
-      <app-image-viewer [cubeList]="boundingJsonBoxData"></app-image-viewer>
+      <app-image-viewer [cubeList]="boundingJsonBoxData" [imagePath]="decoded_path"></app-image-viewer>
+      {{decoded_path}}
     </div>
   </div>
 </div>

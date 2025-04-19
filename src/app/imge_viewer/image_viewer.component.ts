@@ -26,6 +26,8 @@ interface CameraParams {
 export class ImageViewerComponent implements OnInit, OnChanges  {
   @ViewChild('cubeCanvas', { static: true }) canvasElement!: ElementRef<HTMLCanvasElement>;
   @Input() cubeList: any | null = null;
+  @Input() imagePath: any | null = null;
+
   
   isLoading = false;
   error: string | null = null;
@@ -37,6 +39,12 @@ export class ImageViewerComponent implements OnInit, OnChanges  {
   constructor(@Inject(CubeRendererService) private cubeRenderer: CubeRendererService) {}
 
   ngOnInit(): void {
+    if (this.imagePath) {
+      this.onImageload(this.imagePath)
+      this.onJSONCameraParamsFileUpload(this.imagePath)
+      this.drawCube
+    }
+
     // We'll wait for the image and cubeList before rendering
   }
 
@@ -215,20 +223,20 @@ export class ImageViewerComponent implements OnInit, OnChanges  {
     this.sceneDir = input.value;
   }
 
-  onJSONCameraParamsFileUpload(event: Event) {
-    const input = event.target as HTMLInputElement;
-    if (!input.files || input.files.length === 0) return;
-
-    const file = input.files[0];
-    const reader = new FileReader();
-
-    reader.onload = (e) => {
-      const jsonContent = e.target?.result as string;
-      const data: any = JSON.parse(jsonContent);
-      this.camera_intrinsic = data["K"];
-    };
-
-    reader.readAsText(file);
+  onJSONCameraParamsFileUpload(jsonPath: string) {
+    fetch(`${jsonPath}/cam_params.json`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`Failed to load camera parameters: ${response.status} ${response.statusText}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        this.camera_intrinsic = data["K"];
+      })
+      .catch(error => {
+        console.error('Error loading camera parameters:', error);
+      });
   }
 
   onImageUpload(event: Event) {
@@ -261,5 +269,44 @@ export class ImageViewerComponent implements OnInit, OnChanges  {
     };
 
     reader.readAsDataURL(file);
+  }
+  onImageload(imagePath: string) {
+    fetch(`${imagePath}/input.png`)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`Failed to load image: ${response.status} ${response.statusText}`);
+        }
+        return response.blob();
+      })
+      .then(blob => {
+        const img = new Image();
+        const objectURL = URL.createObjectURL(blob);
+        
+        img.onload = () => {
+          this.uploadedImage = img;
+          
+          // Display the image on the canvas without cubes first
+          const canvas = this.canvasElement.nativeElement;
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0);
+          }
+          
+          // If we already have cubes and camera params, we can draw the cubes
+          if (this.cubeList && this.camera_intrinsic) {
+            this.drawCube();
+          }
+          
+          // Clean up the object URL to prevent memory leaks
+          URL.revokeObjectURL(objectURL);
+        };
+        
+        img.src = objectURL;
+      })
+      .catch(error => {
+        console.error('Error loading the image:', error);
+      });
   }
 }
