@@ -10,6 +10,28 @@
     </span>
   </div>
   
+  <!-- New directory stats section -->
+  <div class="directory-stats">
+    <div class="stats-card total">
+      <span class="stats-number">{{ directoryStats.totalFolders }}</span>
+      <span class="stats-label">Total Folders</span>
+    </div>
+    <div class="stats-card refined">
+      <span class="stats-number">{{ directoryStats.refinedFolders }}</span>
+      <span class="stats-label">Refined Folders</span>
+      <span class="stats-percentage" *ngIf="directoryStats.totalFolders > 0">
+        ({{ (directoryStats.refinedFolders / directoryStats.totalFolders * 100).toFixed(1) }}%)
+      </span>
+    </div>
+    <div class="stats-card deleted">
+      <span class="stats-number">{{ directoryStats.deletedFolders }}</span>
+      <span class="stats-label">Deleted Folders</span>
+      <span class="stats-percentage" *ngIf="directoryStats.totalFolders > 0">
+        ({{ (directoryStats.deletedFolders / directoryStats.totalFolders * 100).toFixed(1) }}%)
+      </span>
+    </div>
+  </div>
+  
   <div *ngIf="folderStructure.length > 0" class="folder-table-container">
     <table class="folder-table">
       <thead>

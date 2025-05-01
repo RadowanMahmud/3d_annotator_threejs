@@ -195,3 +195,67 @@ h2 {
   color: green;
   font-weight: bold;
 }
+.directory-stats {
+  display: flex;
+  justify-content: space-around;
+  margin: 20px 0;
+  gap: 15px;
+}
+
+.stats-card {
+  padding: 15px;
+  border-radius: 8px;
+  text-align: center;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 120px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.stats-card.total {
+  background-color: #e3f2fd;
+  border: 1px solid #2196f3;
+}
+
+.stats-card.refined {
+  background-color: #e8f5e9;
+  border: 1px solid #4caf50;
+}
+
+.stats-card.deleted {
+  background-color: #ffebee;
+  border: 1px solid #f44336;
+}
+
+.stats-number {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.stats-label {
+  font-size: 14px;
+  color: #555;
+}
+
+.stats-percentage {
+  font-size: 12px;
+  color: #777;
+  margin-top: 5px;
+}
+
+/* Existing styles */
+.deleted-chip {
+  background-color: #f44336;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+.success-check {
+  color: green;
+  font-weight: bold;
+}

@@ -24,6 +24,12 @@ interface PaginationInfo {
   totalPages: number;
 }
 
+interface DirectoryStats {
+  totalFolders: number;
+  refinedFolders: number;
+  deletedFolders: number;
+}
+
 @Component({
   selector: 'app-folder-explorer',
   standalone: true,
@@ -39,6 +45,13 @@ export class FolderExplorerComponent implements OnInit {
   selectedFolderPath: string | null = 'assets';
   apiBaseUrl = 'http://cvlabhumanrefinement.cs.virginia.edu/api'; // Update with your actual API URL
   
+  // Add directory stats
+  directoryStats: DirectoryStats = {
+    totalFolders: 0,
+    refinedFolders: 0,
+    deletedFolders: 0
+  };
+  
   pagination: PaginationInfo = {
     currentPage: 1,
     itemsPerPage: 400,
@@ -53,11 +66,32 @@ export class FolderExplorerComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // Load directory statistics
+    this.loadDirectoryStats();
+    
     // Get page from route query parameters
     this.route.queryParams.subscribe(params => {
       const page = params['page'] ? parseInt(params['page'], 10) : 1;
       this.pagination.currentPage = page;
       this.loadAssetsStructure();
+    });
+  }
+
+  loadDirectoryStats(): void {
+    this.http.get<{
+      success: boolean,
+      stats: DirectoryStats
+    }>(`${this.apiBaseUrl}/api/directory-stats`).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.directoryStats = response.stats;
+        } else {
+          console.error('Error loading directory stats:', response);
+        }
+      },
+      error: (error) => {
+        console.error('Failed to load directory statistics:', error);
+      }
     });
   }
 
@@ -136,6 +170,7 @@ export class FolderExplorerComponent implements OnInit {
   }
 
   refreshDirectory(): void {
+    this.loadDirectoryStats();
     this.loadAssetsStructure();
   }
   

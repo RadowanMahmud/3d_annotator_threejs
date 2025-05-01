@@ -138,6 +138,81 @@ app.get('/api/directory', (req, res) => {
     }
 });
 
+
+// New API endpoint for folder statistics
+app.get('/api/directory-stats', (req, res) => {
+    try {
+        const assetsDir = path.join(__dirname, 'public', 'assets', 'val');
+        
+        // Create directory if it doesn't exist
+        if (!fs.existsSync(assetsDir)) {
+            fs.mkdirSync(assetsDir, { recursive: true });
+            return res.status(200).json({
+                success: true,
+                stats: {
+                    totalFolders: 0,
+                    refinedFolders: 0,
+                    deletedFolders: 0
+                }
+            });
+        }
+        
+        // Function to count folders by type recursively
+        const countFolders = (dir) => {
+            let stats = {
+                totalFolders: 0,
+                refinedFolders: 0,
+                deletedFolders: 0
+            };
+            
+            const items = fs.readdirSync(dir);
+            
+            items.forEach(item => {
+                const itemPath = path.join(dir, item);
+                const itemStats = fs.statSync(itemPath);
+                
+                if (itemStats.isDirectory()) {
+                    stats.totalFolders++;
+                    
+                    // Check if this folder has refinements or is deleted
+                    const files = fs.readdirSync(itemPath);
+                    
+                    if (files.some(file => file.endsWith('3dbox_refined.json'))) {
+                        stats.refinedFolders++;
+                    }
+                    
+                    if (files.some(file => file === 'deleted.json')) {
+                        stats.deletedFolders++;
+                    }
+                    
+                    // Recursively count in subfolders
+                    const subStats = countFolders(itemPath);
+                    stats.totalFolders += subStats.totalFolders;
+                    stats.refinedFolders += subStats.refinedFolders;
+                    stats.deletedFolders += subStats.deletedFolders;
+                }
+            });
+            
+            return stats;
+        };
+        
+        // Get the stats
+        const stats = countFolders(assetsDir);
+        
+        res.status(200).json({
+            success: true,
+            stats: stats
+        });
+    } catch (error) {
+        console.error('Error getting directory statistics:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get directory statistics',
+            details: error.message
+        });
+    }
+});
+
 // POST endpoint to save JSON data
 app.post('/save/:id', (req, res) => {
     try {
