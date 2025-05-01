@@ -132,7 +132,7 @@ app.get('/api/directory', (req, res) => {
 });
 
 // POST endpoint to save JSON data
-app.post('/api/save/:id', (req, res) => {
+app.post('/save/:id', (req, res) => {
     try {
         const { id } = req.params;
         const jsonData = req.body;

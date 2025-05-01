@@ -491,7 +491,7 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     const id = this.decoded_path.split('/')[this.decoded_path.split('/').length - 1];
     
     // Call the API to save the file on the server
-    fetch(`http://cvlabhumanrefinement.cs.virginia.edu/api/api/save/${id}`, {
+    fetch(`http://cvlabhumanrefinement.cs.virginia.edu/api/save/${id}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
