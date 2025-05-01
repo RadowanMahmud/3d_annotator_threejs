@@ -1,107 +1,176 @@
 .folder-explorer-container {
-    padding: 20px;
-    font-family: Arial, sans-serif;
-  }
-  
-  h2 {
-    margin-bottom: 20px;
-    color: #333;
-  }
-  
-  .folder-selector {
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-  }
-  
-  .refresh-button {
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    margin-right: 15px;
-  }
-  
-  .refresh-button:hover {
-    background-color: #45a049;
-  }
-  
-  .selected-path {
-    font-size: 14px;
-    color: #666;
-    margin-left: 10px;
-  }
-  
-  .folder-table-container {
-    max-height: 600px;
-    overflow-y: auto;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-  }
-  
-  .folder-table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-  
-  .folder-table th, .folder-table td {
-    padding: 12px 15px;
-    text-align: left;
-    border-bottom: 1px solid #ddd;
-  }
-  
-  .folder-table th {
-    background-color: #f2f2f2;
-    font-weight: bold;
-  }
-  
-  .indent {
-    display: inline-block;
-  }
-  
-  .folder-icon, .file-icon {
-    margin-right: 8px;
-  }
-  
-  .toggle-button, .dashboard-button {
-    padding: 5px 10px;
-    border: none;
-    border-radius: 3px;
-    cursor: pointer;
-    font-size: 12px;
-    margin-right: 5px;
-  }
-  
-  .toggle-button {
-    background-color: #f0f0f0;
-    color: #333;
-  }
-  
-  .dashboard-button {
-    background-color: #2196F3;
-    color: white;
-  }
-  
-  .toggle-button:hover {
-    background-color: #e0e0e0;
-  }
-  
-  .dashboard-button:hover {
-    background-color: #0b7dda;
-  }
-  
-  .empty-state {
-    padding: 20px;
-    text-align: center;
-    color: #666;
-    font-style: italic;
-  }
-  
-  .success-check {
-    color: #4CAF50;
-    font-size: 20px;
-    font-weight: bold;
-  }
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+h2 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.folder-selector {
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+}
+
+.refresh-button {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-right: 15px;
+}
+
+.refresh-button:hover {
+  background-color: #45a049;
+}
+
+.selected-path {
+  font-size: 14px;
+  color: #666;
+  margin-left: 10px;
+}
+
+.folder-table-container {
+  max-height: 600px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.folder-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.folder-table th, .folder-table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.folder-table th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+.indent {
+  display: inline-block;
+}
+
+.folder-icon, .file-icon {
+  margin-right: 8px;
+}
+
+.toggle-button, .dashboard-button, .refined-box-button, .pagination-button, .pagination-page-button {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+  margin-right: 5px;
+}
+
+.toggle-button {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+.dashboard-button {
+  background-color: #2196F3;
+  color: white;
+}
+
+.refined-box-button {
+  background-color: #FF9800;
+  color: white;
+}
+
+.toggle-button:hover {
+  background-color: #e0e0e0;
+}
+
+.dashboard-button:hover {
+  background-color: #0b7dda;
+}
+
+.refined-box-button:hover {
+  background-color: #e68a00;
+}
+
+.empty-state {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+  font-style: italic;
+}
+
+.success-check {
+  color: #4CAF50;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+/* Pagination styles */
+.pagination-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  border-top: 1px solid #ddd;
+}
+
+.pagination-info {
+  color: #666;
+  font-size: 14px;
+}
+
+.pagination-buttons {
+  display: flex;
+  align-items: center;
+}
+
+.pagination-button {
+  background-color: #f0f0f0;
+  color: #333;
+  margin: 0 5px;
+}
+
+.pagination-button:hover:not([disabled]) {
+  background-color: #e0e0e0;
+}
+
+.pagination-button[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-page-button {
+  min-width: 30px;
+  height: 30px;
+  padding: 0;
+  margin: 0 2px;
+  background-color: #f0f0f0;
+  color: #333;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.pagination-page-button.active {
+  background-color: #2196F3;
+  color: white;
+}
+
+.pagination-page-button:hover:not(.active) {
+  background-color: #e0e0e0;
+}
+
+.pagination-ellipsis {
+  margin: 0 5px;
+  color: #666;
+}

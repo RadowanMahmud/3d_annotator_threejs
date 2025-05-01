@@ -14,6 +14,7 @@
     <table class="folder-table">
       <thead>
         <tr>
+          <th>ID</th>
           <th>Name</th>
           <th>Path</th>
           <th>Type</th>
@@ -22,8 +23,9 @@
         </tr>
       </thead>
       <tbody>
-        <ng-container *ngFor="let item of flattenedFolderStructure">
+        <ng-container *ngFor="let item of paginatedItems">
           <tr [style.padding-left.px]="item.level * 20">
+            <td>{{ item.id }}</td>
             <td>
               <span class="indent" [style.width.px]="item.level * 20"></span>
               <span class="folder-icon" *ngIf="item.isFolder">📁</span>
@@ -49,11 +51,86 @@
                       class="dashboard-button">
                 Open Dashboard
               </button>
+              
+              <!-- Open Refined Bounding Box button for items with 3D box refinements -->
+              <button *ngIf="item.has3dBoxRefined" 
+                      (click)="openRefinedBox(item)"
+                      class="refined-box-button">
+                Open Refined Box
+              </button>
             </td>
           </tr>
         </ng-container>
       </tbody>
     </table>
+    
+    <!-- Pagination controls -->
+    <div class="pagination-controls">
+      <div class="pagination-info">
+        Showing page {{ pagination.currentPage }} of {{ pagination.totalPages }} 
+        ({{ pagination.totalItems }} total items)
+      </div>
+      <div class="pagination-buttons">
+        <button 
+          [disabled]="pagination.currentPage === 1" 
+          (click)="prevPage()" 
+          class="pagination-button">
+          Previous
+        </button>
+        
+        <ng-container *ngFor="let page of [].constructor(pagination.totalPages < 10 ? pagination.totalPages : 0); let i = index">
+          <button 
+            [class.active]="pagination.currentPage === i + 1"
+            (click)="changePage(i + 1)" 
+            class="pagination-page-button">
+            {{ i + 1 }}
+          </button>
+        </ng-container>
+        
+        <!-- If there are more than 10 pages, show current page and nearby pages -->
+        <ng-container *ngIf="pagination.totalPages >= 10">
+          <!-- First page -->
+          <button 
+            [class.active]="pagination.currentPage === 1"
+            (click)="changePage(1)" 
+            class="pagination-page-button">
+            1
+          </button>
+          
+          <!-- Ellipsis if needed -->
+          <span *ngIf="pagination.currentPage > 4" class="pagination-ellipsis">...</span>
+          
+          <!-- Pages near current page -->
+          <ng-container *ngFor="let i of [-2, -1, 0, 1, 2]">
+            <button 
+              *ngIf="pagination.currentPage + i > 1 && pagination.currentPage + i < pagination.totalPages"
+              [class.active]="i === 0"
+              (click)="changePage(pagination.currentPage + i)" 
+              class="pagination-page-button">
+              {{ pagination.currentPage + i }}
+            </button>
+          </ng-container>
+          
+          <!-- Ellipsis if needed -->
+          <span *ngIf="pagination.currentPage < pagination.totalPages - 3" class="pagination-ellipsis">...</span>
+          
+          <!-- Last page -->
+          <button 
+            [class.active]="pagination.currentPage === pagination.totalPages"
+            (click)="changePage(pagination.totalPages)" 
+            class="pagination-page-button">
+            {{ pagination.totalPages }}
+          </button>
+        </ng-container>
+        
+        <button 
+          [disabled]="pagination.currentPage === pagination.totalPages" 
+          (click)="nextPage()" 
+          class="pagination-button">
+          Next
+        </button>
+      </div>
+    </div>
   </div>
   
   <div *ngIf="folderStructure.length === 0" class="empty-state">

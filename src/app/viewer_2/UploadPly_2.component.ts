@@ -89,6 +89,7 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       const encodedPath = params.get('path');
       this.basePath = encodedPath ? decodeURIComponent(encodedPath) : '';
       this.loadDataFromPath(this.basePath);
+      console.log(this.basePath)
     });
     this.initScene();
     this.animate();
@@ -106,7 +107,7 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       const decodedPath = decodeURIComponent(path);
       this.decoded_path = decodedPath
       
-      fetch(`${decodedPath}/depth_scene.ply`)
+      fetch(`http://cvlabhumanrefinement.cs.virginia.edu/${decodedPath}/depth_scene.ply`)
         .then(response => {
           if (!response.ok) {
             throw new Error(`Failed to load file: ${response.status} ${response.statusText}`);
@@ -490,7 +491,7 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     const id = this.decoded_path.split('/')[this.decoded_path.split('/').length - 1];
     
     // Call the API to save the file on the server
-    fetch(`http://localhost:3000/api/save/${id}`, {
+    fetch(`http://cvlabhumanrefinement.cs.virginia.edu/api/save/${id}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

@@ -24,7 +24,11 @@ app.get('/', (req, res) => {
 // GET endpoint to retrieve directory structure
 app.get('/api/directory', (req, res) => {
     try {
-        const assetsDir = path.join(__dirname, 'public', 'assets');
+        // Extract pagination parameters
+        const page = parseInt(req.query.page) || 1;
+        const itemsPerPage = 400;
+        
+        const assetsDir = path.join(__dirname, 'public', 'assets', 'val');
         
         // Create directory if it doesn't exist
         if (!fs.existsSync(assetsDir)) {
@@ -36,6 +40,9 @@ app.get('/api/directory', (req, res) => {
             const items = fs.readdirSync(dir);
             const structure = [];
             
+            // Sort items alphabetically
+            items.sort((a, b) => a.localeCompare(b));
+            
             items.forEach(item => {
                 const itemPath = path.join(dir, item);
                 const relativePath = path.join(basePath, item);
@@ -44,9 +51,14 @@ app.get('/api/directory', (req, res) => {
                 
                 // Check if the folder has a 3dbox_refined.json file
                 let has3dBoxRefined = false;
+                let refinedBoxPath = null;
                 if (isFolder) {
                     const files = fs.readdirSync(itemPath);
-                    has3dBoxRefined = files.some(file => file.endsWith('3dbox_refined.json'));
+                    const refinedFile = files.find(file => file.endsWith('3dbox_refined.json'));
+                    has3dBoxRefined = refinedFile !== undefined;
+                    if (has3dBoxRefined) {
+                        refinedBoxPath = 'assets/' + path.join(relativePath, refinedFile).replace(/\\/g, '/');
+                    }
                 }
                 
                 const folderItem = {
@@ -54,11 +66,12 @@ app.get('/api/directory', (req, res) => {
                     path: 'assets/' + relativePath.replace(/\\/g, '/'),
                     isFolder: isFolder,
                     level: level,
-                    has3dBoxRefined: has3dBoxRefined
+                    has3dBoxRefined: has3dBoxRefined,
+                    refinedBoxPath: refinedBoxPath
                 };
                 
                 if (isFolder) {
-                    folderItem.isExpanded = false; // Auto-expand first level
+                    folderItem.isExpanded = false;
                     folderItem.children = buildDirectoryStructure(itemPath, relativePath, level + 1);
                 }
                 
@@ -71,9 +84,49 @@ app.get('/api/directory', (req, res) => {
         // Build the directory structure starting from assets folder
         const structure = buildDirectoryStructure(assetsDir, '', 0);
         
+        // Add index as id to each item
+        const addIds = (items, startId = 1) => {
+            let currentId = startId;
+            items.forEach(item => {
+                item.id = currentId++;
+                if (item.children && item.children.length) {
+                    currentId = addIds(item.children, currentId);
+                }
+            });
+            return currentId;
+        };
+        
+        addIds(structure);
+        
+        // Calculate total items for pagination in flattenedStructure
+        const flattenStructure = (items) => {
+            let result = [];
+            items.forEach(item => {
+                result.push(item);
+                if (item.isFolder && item.children && item.children.length) {
+                    result = result.concat(flattenStructure(item.children));
+                }
+            });
+            return result;
+        };
+        
+        const allFlattenedItems = flattenStructure(structure);
+        const totalItems = allFlattenedItems.length;
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+        
+        // If pagination is requested, prepare data for the specific page
+        // For the API, we'll return the full structure but with pagination info
+        // The actual pagination will be handled on the client side
+        
         res.status(200).json({
             success: true,
-            structure: structure
+            structure: structure,
+            pagination: {
+                currentPage: page,
+                itemsPerPage: itemsPerPage,
+                totalItems: totalItems,
+                totalPages: totalPages
+            }
         });
     } catch (error) {
         console.error('Error reading directory structure:', error);

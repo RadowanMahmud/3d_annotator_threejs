@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 
 interface FolderItem {
+  id: number;
   name: string;
   path: string;
   isFolder: boolean;
@@ -12,6 +13,14 @@ interface FolderItem {
   isExpanded?: boolean;
   level: number;
   has3dBoxRefined?: boolean;
+  refinedBoxPath?: string;
+}
+
+interface PaginationInfo {
+  currentPage: number;
+  itemsPerPage: number;
+  totalItems: number;
+  totalPages: number;
 }
 
 @Component({
@@ -25,8 +34,16 @@ interface FolderItem {
 export class FolderExplorerComponent implements OnInit {
   folderStructure: FolderItem[] = [];
   flattenedFolderStructure: FolderItem[] = [];
+  paginatedItems: FolderItem[] = [];
   selectedFolderPath: string | null = 'assets';
-  apiBaseUrl = 'http://localhost:3000'; // Update with your actual API URL
+  apiBaseUrl = 'http://cvlabhumanrefinement.cs.virginia.edu/api'; // Update with your actual API URL
+  
+  pagination: PaginationInfo = {
+    currentPage: 1,
+    itemsPerPage: 400,
+    totalItems: 0,
+    totalPages: 0
+  };
 
   constructor(private router: Router, private http: HttpClient) {}
 
@@ -35,12 +52,18 @@ export class FolderExplorerComponent implements OnInit {
   }
 
   loadAssetsStructure(): void {
-    this.http.get<{success: boolean, structure: FolderItem[]}>(`${this.apiBaseUrl}/api/directory`)
+    this.http.get<{
+      success: boolean, 
+      structure: FolderItem[], 
+      pagination: PaginationInfo
+    }>(`${this.apiBaseUrl}/api/directory?page=${this.pagination.currentPage}`)
       .subscribe({
         next: (response) => {
           if (response.success && response.structure) {
             this.folderStructure = response.structure;
+            this.pagination = response.pagination;
             this.flattenFolderStructure();
+            this.applyPagination();
           } else {
             console.error('Error loading directory structure:', response);
           }
@@ -52,9 +75,15 @@ export class FolderExplorerComponent implements OnInit {
   }
 
   openDashboard(item: FolderItem): void {
-    alert(item.path)
     const encodedPath = encodeURIComponent(item.path);
     this.router.navigate(['/dashboard', encodedPath]);
+  }
+  
+  openRefinedBox(item: FolderItem): void {
+    if (item.refinedBoxPath) {
+      const encodedPath = encodeURIComponent(item.refinedBoxPath);
+      this.router.navigate(['/refined-box', encodedPath]);
+    }
   }
 
   flattenFolderStructure(): void {
@@ -71,6 +100,13 @@ export class FolderExplorerComponent implements OnInit {
     };
     
     flatten(this.folderStructure);
+    this.applyPagination();
+  }
+  
+  applyPagination(): void {
+    const startIndex = (this.pagination.currentPage - 1) * this.pagination.itemsPerPage;
+    const endIndex = startIndex + this.pagination.itemsPerPage;
+    this.paginatedItems = this.flattenedFolderStructure.slice(startIndex, endIndex);
   }
 
   toggleFolder(folder: FolderItem): void {
@@ -80,5 +116,22 @@ export class FolderExplorerComponent implements OnInit {
 
   refreshDirectory(): void {
     this.loadAssetsStructure();
+  }
+  
+  changePage(page: number): void {
+    if (page < 1 || page > this.pagination.totalPages) {
+      return;
+    }
+    
+    this.pagination.currentPage = page;
+    this.applyPagination();
+  }
+  
+  nextPage(): void {
+    this.changePage(this.pagination.currentPage + 1);
+  }
+  
+  prevPage(): void {
+    this.changePage(this.pagination.currentPage - 1);
   }
 }
