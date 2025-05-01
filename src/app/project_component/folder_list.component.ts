@@ -13,7 +13,7 @@ interface FolderItem {
   isExpanded?: boolean;
   level: number;
   has3dBoxRefined?: boolean;
-  isDeleted?: boolean;
+  is_deleted?: boolean;
   refinedBoxPath?: string;
 }
 
