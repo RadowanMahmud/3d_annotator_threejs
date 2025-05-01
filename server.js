@@ -58,7 +58,7 @@ app.get('/api/directory', (req, res) => {
                     const refinedFile = files.find(file => file.endsWith('3dbox_refined.json'));
                     has3dBoxRefined = refinedFile !== undefined;
                     if (has3dBoxRefined) {
-                        refinedBoxPath = 'assets/' + path.join(relativePath, refinedFile).replace(/\\/g, '/');
+                        refinedBoxPath = 'assets/val' + path.join(relativePath, refinedFile).replace(/\\/g, '/');
                     }
                 }
                 
@@ -147,7 +147,7 @@ app.post('/save/:id', (req, res) => {
         }
         
         // Define save directory
-        const saveDirectory = path.join(__dirname, 'public', 'assets', id);
+        const saveDirectory = path.join(__dirname, 'public', 'assets', 'val', id);
         
         // Create directory structure if it doesn't exist
         if (!fs.existsSync(saveDirectory)) {
