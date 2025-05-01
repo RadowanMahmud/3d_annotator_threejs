@@ -155,7 +155,7 @@ app.post('/save/:id', (req, res) => {
         }
         
         // Create filename and path
-        const filename = `${id}_3dbox_refined.json`;
+        const filename = `3dbox_refined.json`;
         const filePath = path.join(saveDirectory, filename);
         
         // Write the file
@@ -164,7 +164,7 @@ app.post('/save/:id', (req, res) => {
         res.status(200).json({
             success: true,
             message: 'File saved successfully',
-            path: `/assets/${id}/${filename}`
+            path: `/assets/val/${id}/${filename}`
         });
     } catch (error) {
         console.error('Error saving file:', error);

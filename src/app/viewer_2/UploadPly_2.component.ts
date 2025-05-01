@@ -477,7 +477,7 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       const category_name = bboxData.category_name;
 
       this.boundingJsonBoxData[i].center_cam = center
-      this.boundingJsonBoxData[i].dimensions = [length, width, height]
+      this.boundingJsonBoxData[i].dimensions = [length, height, width]
       this.boundingJsonBoxData[i].R_cam = [
         [rotationMatrix.elements[0], rotationMatrix.elements[4], rotationMatrix.elements[8]],
         [rotationMatrix.elements[1], rotationMatrix.elements[5], rotationMatrix.elements[9]],
