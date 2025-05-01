@@ -66,7 +66,7 @@ export class FolderExplorerComponent implements OnInit {
       success: boolean, 
       structure: FolderItem[], 
       pagination: PaginationInfo
-    }>(`${this.apiBaseUrl}/directory?page=${this.pagination.currentPage}`)
+    }>(`${this.apiBaseUrl}/api/directory?page=${this.pagination.currentPage}`)
       .subscribe({
         next: (response) => {
           if (response.success && response.structure) {
