@@ -59,6 +59,11 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
 
   keyState: any;
 
+  optOutChecked: boolean = false;
+  optOutStatus: boolean = false;
+  optOutMessage: string = '';
+  optOutSuccess: boolean = false;
+
   constructor(
     private route: ActivatedRoute, 
     private http: HttpClient
@@ -82,6 +87,8 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
   boundingBoxEditData: BoundingBoxEditData[] = [];
   basePath: any;
   decoded_path: any;
+  private isDepthFileLoaded: boolean = false;
+  private isBoundingBoxLoaded: boolean = false;
 
 
   ngOnInit() {
@@ -90,10 +97,34 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       this.basePath = encodedPath ? decodeURIComponent(encodedPath) : '';
       this.loadDataFromPath(this.basePath);
       console.log(this.basePath)
+      this.checkOptOutStatus();
     });
     this.initScene();
     this.animate();
-    this.setupEventListeners();
+    this.setupEventListeners();    
+  }
+
+  private checkOptOutStatus() {
+    if (!this.decoded_path) return;
+    
+    const id = this.getDirectoryIdFromPath();
+    if (!id) return;
+    
+    fetch(`${this.decoded_path}/deleted.json`)
+      .then((response: any) => {
+        if (response.ok) {
+          return response.json().then((data: any) => {
+            this.optOutChecked = true;
+            this.optOutStatus = true;
+            this.optOutSuccess = true;
+            this.optOutMessage = 'This image is marked for deletion';
+          });
+        }
+      })
+      .catch(() => {
+        // File doesn't exist, which is fine
+        this.optOutChecked = false;
+      });
   }
   handleSelectKeyDown(event: KeyboardEvent) {
     if (['ArrowUp', 'ArrowLeft', 'ArrowRight', 'ArrowDown'].includes(event.key)) {
@@ -101,42 +132,156 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       // Handle the arrow key press as needed
     }
   }
+
+  handleOptOut() {
+    const id = this.getDirectoryIdFromPath();
+    if (!id) {
+      this.showOptOutMessage(false, 'Invalid directory path');
+      return;
+    }
+    
+    if (this.optOutChecked) {
+      // Create deleted.json file
+      const deleteData = { deleted: true, timestamp: new Date().toISOString() };
+      
+      fetch(`http://cvlabhumanrefinement.cs.virginia.edu/api/save/${id}/deleted`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(deleteData)
+      })
+      .then(response => response.json())
+      .then(result => {
+        if (result.success) {
+          this.showOptOutMessage(true, 'Successfully marked for deletion');
+        } else {
+          this.showOptOutMessage(false, 'Failed to mark for deletion: ' + result.error);
+        }
+      })
+      .catch(error => {
+        this.showOptOutMessage(false, 'Network error: ' + error.message);
+      });
+    } else {
+      // Remove the deleted.json file (if API supports it, otherwise maintain local state)
+      this.optOutStatus = false;
+      this.optOutMessage = '';
+      // You might want to add actual file deletion endpoint later
+    }
+  }
+  
+  // Helper method to show opt-out status messages
+  private showOptOutMessage(success: boolean, message: string) {
+    this.optOutStatus = true;
+    this.optOutSuccess = success;
+    this.optOutMessage = message;
+    
+    // Hide message after 5 seconds
+    setTimeout(() => {
+      this.optOutStatus = false;
+    }, 5000);
+  }
+  
+  // Helper method to extract directory ID from path
+  private getDirectoryIdFromPath(): string | null {
+    if (!this.decoded_path) return null;
+    const pathParts = this.decoded_path.split('/');
+    return pathParts.length > 0 ? pathParts[pathParts.length - 1] : null;
+  }
+
+
+  deleteSelectedBoundingBox() {
+    if (this.selectedBoundingBoxIndex === null || this.boundingBoxEditData.length === 0) {
+      return;
+    }
+    
+    // Remove from editing data array
+    this.boundingBoxEditData.splice(this.selectedBoundingBoxIndex, 1);
+    
+    // Remove from JSON data array for export
+    this.boundingJsonBoxData.splice(this.selectedBoundingBoxIndex, 1);
+    
+    // Remove from scene
+    if (this.boundingBoxMesh instanceof THREE.Group) {
+      this.boundingBoxMesh.remove(this.boundingBoxMesh.children[this.selectedBoundingBoxIndex]);
+    }
+    
+    // If there are no more bounding boxes, handle empty state
+    if (this.boundingBoxEditData.length === 0) {
+      this.selectedBoundingBoxIndex = -1;
+      // Optionally trigger opt-out if no boxes remain
+      if (!this.optOutChecked) {
+        this.optOutChecked = true;
+        this.handleOptOut();
+      }
+    } else {
+      // Select next available box or the last one
+      this.selectedBoundingBoxIndex = Math.min(
+        this.selectedBoundingBoxIndex, 
+        this.boundingBoxEditData.length - 1
+      );
+      this.onBoundingBoxSelect();
+    }
+    
+    // Update the scene
+    this.renderer.render(this.scene, this.camera);
+  }
+
   loadDataFromPath(path: string) {
     try {
+      // Reset loading flags
+      this.isDepthFileLoaded = false;
+      this.isBoundingBoxLoaded = false;
+      
       // Decode the path if it was URL-encoded
       const decodedPath = decodeURIComponent(path);
-      this.decoded_path = decodedPath
+      this.decoded_path = decodedPath;
       
+      // Load PLY file
       fetch(`${decodedPath}/depth_scene.ply`)
         .then(response => {
           if (!response.ok) {
-            throw new Error(`Failed to load file: ${response.status} ${response.statusText}`);
+            throw new Error(`Failed to load PLY file: ${response.status} ${response.statusText}`);
           }
-          return response.arrayBuffer(); // Get as arrayBuffer instead of json
+          return response.arrayBuffer();
         })
         .then(arrayBuffer => {
-          this.loadPLYFile(arrayBuffer); // Pass to your PLY loader function
+          this.loadPLYFile(arrayBuffer);
+          this.isDepthFileLoaded = true;
+          this.checkInitializeScene();
         })
         .catch(error => {
-          console.error('Error loading or parsing the file:', error);
+          console.error('Error loading PLY file:', error);
         });
-      // Use fetch API to load the file from the path
+      
+      // Load bounding box file
       fetch(`${decodedPath}/3dbbox_ground_no_icp.json`)
         .then(response => {
           if (!response.ok) {
-            throw new Error(`Failed to load file: ${response.status} ${response.statusText}`);
+            throw new Error(`Failed to load bounding box file: ${response.status} ${response.statusText}`);
           }
           return response.json();
         })
         .then(jsonData => {
           this.loadBoundingBoxFromJSON(JSON.stringify(jsonData));
+          this.isBoundingBoxLoaded = true;
+          this.checkInitializeScene();
         })
         .catch(error => {
-          console.error('Error loading or parsing the file:', error);
+          console.error('Error loading bounding box file:', error);
         });
 
     } catch (error) {
       console.error('Error accessing file:', error);
+    }
+  }
+
+    // New method to check if both files are loaded and initialize the scene
+  private checkInitializeScene() {
+    if (this.isDepthFileLoaded && this.isBoundingBoxLoaded) {
+      console.log('Both files loaded, starting animation');
+      // Start animation loop only when both files are loaded
+      this.animate();
     }
   }
   ngAfterViewInit() {
@@ -485,7 +630,6 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       ];
     }
 
-
     // Call the API to save the file on the server
     const jsonContent = JSON.stringify(this.boundingJsonBoxData, null, 2);
     const id = this.decoded_path.split('/')[this.decoded_path.split('/').length - 1];
@@ -502,30 +646,17 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     .then(result => {
       if (result.success) {
         console.log('File saved successfully on server:', result.path);
-        alert('file saved')
+        alert('File saved');
         // You could display a success message to the user here
       } else {
         console.error('Error saving file:', result.error);
-        // You could display an error message to the user here
+        alert('Error saving file: ' + result.error);
       }
     })
     .catch(error => {
       console.error('Failed to communicate with server:', error);
-      // You could display a network error message to the user here
+      alert('Failed to communicate with server: ' + error.message);
     });
-  
-    // const blob = new Blob([jsonContent], { type: 'application/json' });
-    // const url = URL.createObjectURL(blob);
-    
-    // const link = document.createElement('a');
-    // link.href = url;
-    // const id = this.decoded_path.split('/')[this.decoded_path.split('/').length - 1]
-    // link.download = id + '_3dbox_refined.json';
-    
-    // document.body.appendChild(link);
-    // link.click();
-    // document.body.removeChild(link);
-    // URL.revokeObjectURL(url);
   }
 
   // code to handle file uploads

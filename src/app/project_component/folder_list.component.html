@@ -18,7 +18,7 @@
           <th>Name</th>
           <th>Path</th>
           <th>Type</th>
-          <th>3D Box Refined</th>
+          <th>Status</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -36,7 +36,11 @@
             <td>{{ item.path }}</td>
             <td>{{ item.isFolder ? 'Folder' : 'File' }}</td>
             <td>
-              <span *ngIf="item.has3dBoxRefined" class="success-check">✓</span>
+              <!-- Show deleted chip if is_deleted is true -->
+              <span *ngIf="item.is_deleted" class="deleted-chip">Deleted</span>
+              
+              <!-- Otherwise show refinement check as usual when has3dBoxRefined is true -->
+              <span *ngIf="!item.is_deleted && item.has3dBoxRefined" class="success-check">✓</span>
             </td>
             <td>
               <!-- Toggle button for folders with children -->

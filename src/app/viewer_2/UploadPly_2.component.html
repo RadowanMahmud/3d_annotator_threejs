@@ -1,27 +1,5 @@
 <div class="container">
-  <!-- <div class="controls-container">
-
-
-    <div class="file-controls">
-      <input 
-        type="file" 
-        (change)="onFileUpload($event, 'ply')"
-        accept=".ply"
-        class="file-input"
-        id="ply-file-input"
-      />
-      <label for="ply-file-input" class="file-input-label">Upload PLY File</label>
-      
-      <input 
-        type="file" 
-        (change)="onJSONFileUpload($event)"
-        accept=".json"
-        class="file-input"
-        id="json-file-input"
-      />
-      <label for="json-file-input" class="file-input-label">Upload JSON Bounding Box</label>
-    </div>
-  </div> -->
+  <!-- Controls remain commented out -->
 
   <div class="scene-container">
     <div #rendererContainer style="width: 100%; height: 42vh; background-color: #f0f0f0;"></div>
@@ -73,13 +51,23 @@
       </div>
 
       <div class="edit-controls">
-        <button (click)="exportBoundingBoxesToJSON()">Export Boxes</button>
+        <button (click)="exportBoundingBoxesToJSON()">Save Boxes</button>
+        <button (click)="deleteSelectedBoundingBox()" class="delete-btn">Delete Selected Box</button>
       </div>
     </div>
 
     <div class="image-viewer-container">
       <app-image-viewer [cubeList]="boundingJsonBoxData" [imagePath]="decoded_path"></app-image-viewer>
-      {{decoded_path}}
+      <div class="path-info">{{decoded_path}}</div>
+      <div class="opt-out-container">
+        <label class="opt-out-label">
+          <input type="checkbox" [(ngModel)]="optOutChecked" (change)="handleOptOut()">
+          Opt out this image (mark for deletion)
+        </label>
+        <div *ngIf="optOutStatus" class="opt-out-status" [ngClass]="{'status-success': optOutSuccess, 'status-error': !optOutSuccess}">
+          {{ optOutMessage }}
+        </div>
+      </div>
     </div>
   </div>
 </div>

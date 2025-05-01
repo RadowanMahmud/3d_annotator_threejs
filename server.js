@@ -53,6 +53,8 @@ app.get('/api/directory', (req, res) => {
                 // Check if the folder has a 3dbox_refined.json file
                 let has3dBoxRefined = false;
                 let refinedBoxPath = null;
+                let isDeleted = false; // Added property for deletion status
+                
                 if (isFolder) {
                     const files = fs.readdirSync(itemPath);
                     const refinedFile = files.find(file => file.endsWith('3dbox_refined.json'));
@@ -60,6 +62,10 @@ app.get('/api/directory', (req, res) => {
                     if (has3dBoxRefined) {
                         refinedBoxPath = 'assets/val' + path.join(relativePath, refinedFile).replace(/\\/g, '/');
                     }
+                    
+                    // Check if deleted.json exists
+                    const deletedFile = files.find(file => file === 'deleted.json');
+                    isDeleted = deletedFile !== undefined;
                 }
                 
                 const folderItem = {
@@ -68,7 +74,8 @@ app.get('/api/directory', (req, res) => {
                     isFolder: isFolder,
                     level: level,
                     has3dBoxRefined: has3dBoxRefined,
-                    refinedBoxPath: refinedBoxPath
+                    refinedBoxPath: refinedBoxPath,
+                    is_deleted: isDeleted // Add the is_deleted property
                 };
                 
                 if (isFolder) {
@@ -175,6 +182,51 @@ app.post('/save/:id', (req, res) => {
         });
     }
 });
+
+
+app.post('/save/:id/deleted', (req, res) => {
+    try {
+      const { id } = req.params;
+      const jsonData = req.body;
+      
+      // Validate inputs
+      if (!id) {
+        return res.status(400).json({ error: 'ID parameter is required' });
+      }
+      
+      if (!jsonData || Object.keys(jsonData).length === 0) {
+        return res.status(400).json({ error: 'No JSON data provided' });
+      }
+      
+      // Define save directory
+      const saveDirectory = path.join(__dirname, 'public', 'assets', 'val', id);
+      
+      // Create directory structure if it doesn't exist
+      if (!fs.existsSync(saveDirectory)) {
+        fs.mkdirSync(saveDirectory, { recursive: true });
+      }
+      
+      // Create filename and path
+      const filename = `deleted.json`;
+      const filePath = path.join(saveDirectory, filename);
+      
+      // Write the file
+      fs.writeFileSync(filePath, JSON.stringify(jsonData, null, 2));
+      
+      res.status(200).json({
+        success: true,
+        message: 'Image marked for deletion',
+        path: `/assets/val/${id}/${filename}`
+      });
+    } catch (error) {
+      console.error('Error saving deletion marker:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to mark for deletion',
+        details: error.message
+      });
+    }
+  });
 
 // Start the server
 app.listen(PORT, (error) => {
