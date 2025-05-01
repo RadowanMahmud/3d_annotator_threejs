@@ -1,7 +1,7 @@
 // folder-explorer.component.ts
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 
 interface FolderItem {
@@ -46,10 +46,19 @@ export class FolderExplorerComponent implements OnInit {
     totalPages: 0
   };
 
-  constructor(private router: Router, private http: HttpClient) {}
+  constructor(
+    private router: Router, 
+    private http: HttpClient,
+    private route: ActivatedRoute
+  ) {}
 
   ngOnInit(): void {
-    this.loadAssetsStructure();
+    // Get page from route query parameters
+    this.route.queryParams.subscribe(params => {
+      const page = params['page'] ? parseInt(params['page'], 10) : 1;
+      this.pagination.currentPage = page;
+      this.loadAssetsStructure();
+    });
   }
 
   loadAssetsStructure(): void {
@@ -57,12 +66,15 @@ export class FolderExplorerComponent implements OnInit {
       success: boolean, 
       structure: FolderItem[], 
       pagination: PaginationInfo
-    }>(`${this.apiBaseUrl}/api/directory?page=${this.pagination.currentPage}`)
+    }>(`${this.apiBaseUrl}/directory?page=${this.pagination.currentPage}`)
       .subscribe({
         next: (response) => {
           if (response.success && response.structure) {
             this.folderStructure = response.structure;
             this.pagination = response.pagination;
+            // Override the currentPage from the response with our route parameter
+            // to ensure consistency
+            this.pagination.currentPage = this.pagination.currentPage;
             this.flattenFolderStructure();
           } else {
             console.error('Error loading directory structure:', response);
@@ -132,12 +144,14 @@ export class FolderExplorerComponent implements OnInit {
       return;
     }
     
-    this.pagination.currentPage = page;
-    // Get parent directories for pagination after changing page
-    const parentDirectories = this.folderStructure.filter(item => item.isFolder);
-    parentDirectories.sort((a, b) => a.name.localeCompare(b.name));
-    this.applyPagination(parentDirectories);
-    this.flattenFolderStructure();
+    // Update the route query parameter
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { page: page },
+      queryParamsHandling: 'merge'
+    });
+    
+    // The page will be reloaded via the route subscription in ngOnInit
   }
   
   nextPage(): void {
