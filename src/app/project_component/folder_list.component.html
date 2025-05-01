@@ -23,9 +23,10 @@
         </tr>
       </thead>
       <tbody>
-        <ng-container *ngFor="let item of paginatedItems">
+        <ng-container *ngFor="let item of flattenedFolderStructure">
           <tr [style.padding-left.px]="item.level * 20">
-            <td>{{ item.id }}</td>
+            <!-- Only show ID for parent directories (level 0) -->
+            <td>{{ item.level === 0 ? item.id : '' }}</td>
             <td>
               <span class="indent" [style.width.px]="item.level * 20"></span>
               <span class="folder-icon" *ngIf="item.isFolder">📁</span>
@@ -63,73 +64,73 @@
         </ng-container>
       </tbody>
     </table>
-    
-    <!-- Pagination controls -->
-    <div class="pagination-controls">
-      <div class="pagination-info">
-        Showing page {{ pagination.currentPage }} of {{ pagination.totalPages }} 
-        ({{ pagination.totalItems }} total items)
-      </div>
-      <div class="pagination-buttons">
+  </div>
+  
+  <!-- Pagination controls in separate container below the table -->
+  <div *ngIf="folderStructure.length > 0" class="pagination-container">
+    <div class="pagination-info">
+      Showing page {{ pagination.currentPage }} of {{ pagination.totalPages }} 
+      ({{ pagination.totalItems }} total parent directories)
+    </div>
+    <div class="pagination-buttons">
+      <button 
+        [disabled]="pagination.currentPage === 1" 
+        (click)="prevPage()" 
+        class="pagination-button">
+        Previous
+      </button>
+      
+      <ng-container *ngFor="let page of [].constructor(pagination.totalPages < 10 ? pagination.totalPages : 0); let i = index">
         <button 
-          [disabled]="pagination.currentPage === 1" 
-          (click)="prevPage()" 
-          class="pagination-button">
-          Previous
+          [class.active]="pagination.currentPage === i + 1"
+          (click)="changePage(i + 1)" 
+          class="pagination-page-button">
+          {{ i + 1 }}
+        </button>
+      </ng-container>
+      
+      <!-- If there are more than 10 pages, show current page and nearby pages -->
+      <ng-container *ngIf="pagination.totalPages >= 10">
+        <!-- First page -->
+        <button 
+          [class.active]="pagination.currentPage === 1"
+          (click)="changePage(1)" 
+          class="pagination-page-button">
+          1
         </button>
         
-        <ng-container *ngFor="let page of [].constructor(pagination.totalPages < 10 ? pagination.totalPages : 0); let i = index">
+        <!-- Ellipsis if needed -->
+        <span *ngIf="pagination.currentPage > 4" class="pagination-ellipsis">...</span>
+        
+        <!-- Pages near current page -->
+        <ng-container *ngFor="let i of [-2, -1, 0, 1, 2]">
           <button 
-            [class.active]="pagination.currentPage === i + 1"
-            (click)="changePage(i + 1)" 
+            *ngIf="pagination.currentPage + i > 1 && pagination.currentPage + i < pagination.totalPages"
+            [class.active]="i === 0"
+            (click)="changePage(pagination.currentPage + i)" 
             class="pagination-page-button">
-            {{ i + 1 }}
+            {{ pagination.currentPage + i }}
           </button>
         </ng-container>
         
-        <!-- If there are more than 10 pages, show current page and nearby pages -->
-        <ng-container *ngIf="pagination.totalPages >= 10">
-          <!-- First page -->
-          <button 
-            [class.active]="pagination.currentPage === 1"
-            (click)="changePage(1)" 
-            class="pagination-page-button">
-            1
-          </button>
-          
-          <!-- Ellipsis if needed -->
-          <span *ngIf="pagination.currentPage > 4" class="pagination-ellipsis">...</span>
-          
-          <!-- Pages near current page -->
-          <ng-container *ngFor="let i of [-2, -1, 0, 1, 2]">
-            <button 
-              *ngIf="pagination.currentPage + i > 1 && pagination.currentPage + i < pagination.totalPages"
-              [class.active]="i === 0"
-              (click)="changePage(pagination.currentPage + i)" 
-              class="pagination-page-button">
-              {{ pagination.currentPage + i }}
-            </button>
-          </ng-container>
-          
-          <!-- Ellipsis if needed -->
-          <span *ngIf="pagination.currentPage < pagination.totalPages - 3" class="pagination-ellipsis">...</span>
-          
-          <!-- Last page -->
-          <button 
-            [class.active]="pagination.currentPage === pagination.totalPages"
-            (click)="changePage(pagination.totalPages)" 
-            class="pagination-page-button">
-            {{ pagination.totalPages }}
-          </button>
-        </ng-container>
+        <!-- Ellipsis if needed -->
+        <span *ngIf="pagination.currentPage < pagination.totalPages - 3" class="pagination-ellipsis">...</span>
         
+        <!-- Last page -->
         <button 
-          [disabled]="pagination.currentPage === pagination.totalPages" 
-          (click)="nextPage()" 
-          class="pagination-button">
-          Next
+          [class.active]="pagination.currentPage === pagination.totalPages"
+          (click)="changePage(pagination.totalPages)" 
+          class="pagination-page-button">
+          {{ pagination.totalPages }}
         </button>
-      </div>
+      </ng-container>
+      
+      <button 
+        [disabled]="pagination.currentPage === pagination.totalPages" 
+        (click)="nextPage()" 
+        class="pagination-button">
+        Next
+      </button>
     </div>
   </div>
   

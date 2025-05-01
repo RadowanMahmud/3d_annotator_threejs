@@ -22,6 +22,7 @@ app.get('/', (req, res) => {
 });
 
 // GET endpoint to retrieve directory structure
+// GET endpoint to retrieve directory structure with pagination
 app.get('/api/directory', (req, res) => {
     try {
         // Extract pagination parameters
@@ -98,21 +99,13 @@ app.get('/api/directory', (req, res) => {
         
         addIds(structure);
         
-        // Calculate total items for pagination in flattenedStructure
-        const flattenStructure = (items) => {
-            let result = [];
-            items.forEach(item => {
-                result.push(item);
-                if (item.isFolder && item.children && item.children.length) {
-                    result = result.concat(flattenStructure(item.children));
-                }
-            });
-            return result;
-        };
-        
-        const allFlattenedItems = flattenStructure(structure);
-        const totalItems = allFlattenedItems.length;
+        // Only count parent directories (top-level) for pagination
+        const parentDirectories = structure.filter(item => item.isFolder);
+        const totalItems = parentDirectories.length;
         const totalPages = Math.ceil(totalItems / itemsPerPage);
+        
+        // Sort parent directories alphabetically
+        parentDirectories.sort((a, b) => a.name.localeCompare(b.name));
         
         // If pagination is requested, prepare data for the specific page
         // For the API, we'll return the full structure but with pagination info

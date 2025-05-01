@@ -63,7 +63,6 @@ export class FolderExplorerComponent implements OnInit {
             this.folderStructure = response.structure;
             this.pagination = response.pagination;
             this.flattenFolderStructure();
-            this.applyPagination();
           } else {
             console.error('Error loading directory structure:', response);
           }
@@ -89,6 +88,16 @@ export class FolderExplorerComponent implements OnInit {
   flattenFolderStructure(): void {
     this.flattenedFolderStructure = [];
     
+    // Get all parent directories for pagination
+    const parentDirectories = this.folderStructure.filter(item => item.isFolder);
+    
+    // Sort parent directories alphabetically
+    parentDirectories.sort((a, b) => a.name.localeCompare(b.name));
+    
+    // Apply pagination to parent directories
+    this.applyPagination(parentDirectories);
+    
+    // Flatten the structure for display, starting with paginated parent directories
     const flatten = (items: FolderItem[]) => {
       items.forEach(item => {
         this.flattenedFolderStructure.push(item);
@@ -99,14 +108,13 @@ export class FolderExplorerComponent implements OnInit {
       });
     };
     
-    flatten(this.folderStructure);
-    this.applyPagination();
+    flatten(this.paginatedItems);
   }
   
-  applyPagination(): void {
+  applyPagination(parentDirectories: FolderItem[]): void {
     const startIndex = (this.pagination.currentPage - 1) * this.pagination.itemsPerPage;
     const endIndex = startIndex + this.pagination.itemsPerPage;
-    this.paginatedItems = this.flattenedFolderStructure.slice(startIndex, endIndex);
+    this.paginatedItems = parentDirectories.slice(startIndex, endIndex);
   }
 
   toggleFolder(folder: FolderItem): void {
@@ -124,7 +132,11 @@ export class FolderExplorerComponent implements OnInit {
     }
     
     this.pagination.currentPage = page;
-    this.applyPagination();
+    // Get parent directories for pagination after changing page
+    const parentDirectories = this.folderStructure.filter(item => item.isFolder);
+    parentDirectories.sort((a, b) => a.name.localeCompare(b.name));
+    this.applyPagination(parentDirectories);
+    this.flattenFolderStructure();
   }
   
   nextPage(): void {
