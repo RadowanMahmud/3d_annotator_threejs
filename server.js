@@ -64,7 +64,7 @@ app.get('/api/directory', (req, res) => {
                 
                 const folderItem = {
                     name: item,
-                    path: 'assets/' + relativePath.replace(/\\/g, '/'),
+                    path: 'assets/val/' + relativePath.replace(/\\/g, '/'),
                     isFolder: isFolder,
                     level: level,
                     has3dBoxRefined: has3dBoxRefined,
