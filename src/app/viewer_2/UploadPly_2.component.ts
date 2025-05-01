@@ -107,7 +107,7 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       const decodedPath = decodeURIComponent(path);
       this.decoded_path = decodedPath
       
-      fetch(`http://cvlabhumanrefinement.cs.virginia.edu/${decodedPath}/depth_scene.ply`)
+      fetch(`${decodedPath}/depth_scene.ply`)
         .then(response => {
           if (!response.ok) {
             throw new Error(`Failed to load file: ${response.status} ${response.statusText}`);
@@ -121,7 +121,7 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
           console.error('Error loading or parsing the file:', error);
         });
       // Use fetch API to load the file from the path
-      fetch(`${decodedPath}/3dbbox.json`)
+      fetch(`${decodedPath}/3dbbox_ground_no_icp.json`)
         .then(response => {
           if (!response.ok) {
             throw new Error(`Failed to load file: ${response.status} ${response.statusText}`);
