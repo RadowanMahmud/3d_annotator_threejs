@@ -692,7 +692,7 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
         const zAxis = new THREE.Vector3().subVectors(v4, v0).normalize(); // width
       
         // Reconstruct rotation matrix (3x3)
-        const rotationMatrix = new THREE.Matrix4().makeBasis(zAxis, yAxis, xAxis);
+        const rotationMatrix = new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis);
         const euler = new THREE.Euler().setFromRotationMatrix(rotationMatrix, 'ZYX');
       
         // Compute center as average of all vertices
