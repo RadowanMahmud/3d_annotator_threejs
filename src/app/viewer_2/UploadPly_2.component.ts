@@ -609,44 +609,36 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
   private applyLocalRotation(boxIndex: number, axis: 'X' | 'Y' | 'Z', amount: number) {
     const boxData = this.boundingBoxEditData[boxIndex];
     
-    // Create a quaternion for the current rotation
-    const currentRotation = new THREE.Euler(
-      boxData.rotationX, 
-      boxData.rotationY, 
-      boxData.rotationZ, 
-      'ZYX'
+    // Create a temporary object to handle the rotations
+    const tempObject = new THREE.Object3D();
+    
+    // Set initial rotation from boxData
+    tempObject.rotation.set(
+        boxData.rotationX,
+        boxData.rotationY,
+        boxData.rotationZ,
+        'ZYX'
     );
-    const currentQuaternion = new THREE.Quaternion().setFromEuler(currentRotation);
     
-    // Create local axis vector based on current orientation
-    let localAxis = new THREE.Vector3();
-    
+    // Apply the rotation directly using Object3D's methods
+    // This will rotate around the object's local axes
     if (axis === 'X') {
-      localAxis.set(1, 0, 0).applyQuaternion(currentQuaternion);
+        tempObject.rotateX(amount);
     } else if (axis === 'Y') {
-      localAxis.set(0, 1, 0).applyQuaternion(currentQuaternion);
+        tempObject.rotateY(amount);
     } else { // Z
-      localAxis.set(0, 0, 1).applyQuaternion(currentQuaternion);
+        tempObject.rotateZ(amount);
     }
     
-    // Create rotation around that local axis
-    const incrementalQuaternion = new THREE.Quaternion().setFromAxisAngle(localAxis.normalize(), amount);
-    
-    // Apply the local rotation (multiply the current by the incremental)
-    currentQuaternion.multiply(incrementalQuaternion);
-    
-    // Convert back to Euler angles
-    const newEuler = new THREE.Euler().setFromQuaternion(currentQuaternion, 'ZYX');
-    
-    // Update the rotation values
-    boxData.rotationX = newEuler.x;
-    boxData.rotationY = newEuler.y;
-    boxData.rotationZ = newEuler.z;
+    // The rotateX/Y/Z methods rotate around the local object axes
+    // Extract the resulting Euler angles
+    boxData.rotationX = tempObject.rotation.x;
+    boxData.rotationY = tempObject.rotation.y;
+    boxData.rotationZ = tempObject.rotation.z;
     
     // Update the bounding box
     this.updateBoundingBox();
   }
-
   private applyLocalTranslation(boxIndex: number, axis: 'X' | 'Y' | 'Z', amount: number) {
     const boxData = this.boundingBoxEditData[boxIndex];
     
