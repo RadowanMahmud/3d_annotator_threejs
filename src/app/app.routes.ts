@@ -8,7 +8,7 @@ export const routes: Routes = [
         component: FolderExplorerComponent
     },
     {
-        path: 'dashboard/:path',
+        path: 'dashboard/:path/:type',
         component: PlyViewer2Component
     }
 ];

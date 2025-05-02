@@ -7,6 +7,7 @@ import { TrackballControls } from 'three/examples/jsm/Addons.js';
 import { ImageViewerComponent } from "../imge_viewer/image_viewer.component";
 import { ActivatedRoute } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { Subscription } from 'rxjs';
 
 interface BoundingBoxData {
   obj_id: string;
@@ -57,6 +58,12 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
 
   boundingJsonBoxData: BoundingBoxData[] = [];
 
+  private keydownListener: ((event: KeyboardEvent) => void) | null = null;
+  private keyupListener: ((event: KeyboardEvent) => void) | null = null;
+  private animationFrameId: number | null = null;
+  private routeSubscription: Subscription | null = null;
+
+
   keyState: any;
 
   optOutChecked: boolean = false;
@@ -89,19 +96,23 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
   decoded_path: any;
   private isDepthFileLoaded: boolean = false;
   private isBoundingBoxLoaded: boolean = false;
+  private type: string = 'default';
 
 
+  // Modified ngOnInit to store the subscription
   ngOnInit() {
-    this.route.paramMap.subscribe(params => {
+    this.routeSubscription = this.route.paramMap.subscribe(params => {
       const encodedPath = params.get('path');
+      const bbox_type = params.get('type');
+      this.type = bbox_type ? decodeURIComponent(bbox_type) : 'deafult';
       this.basePath = encodedPath ? decodeURIComponent(encodedPath) : '';
       this.loadDataFromPath(this.basePath);
-      console.log(this.basePath)
       this.checkOptOutStatus();
     });
+    
     this.initScene();
     this.animate();
-    this.setupEventListeners();    
+    this.setupEventListeners();
   }
 
   private checkOptOutStatus() {
@@ -255,6 +266,7 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
         });
       
       // Load bounding box file
+      const file = this.type === 'default' ? '3dbbox_ground_no_icp' : '3dbox_refined'; 
       fetch(`${decodedPath}/3dbbox_ground_no_icp.json`)
         .then(response => {
           if (!response.ok) {
@@ -342,8 +354,9 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     this.camera.position.z = 5;
   }
 
+  // Modified animate method to store the animation frame ID
   private animate = () => {
-    requestAnimationFrame(this.animate);
+    this.animationFrameId = requestAnimationFrame(this.animate);
     
     // Update trackball controls when not in edit mode
     if (!this.isEditMode) {
@@ -354,6 +367,7 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     this.renderer.render(this.scene, this.camera);
   }
 
+  // Modified setupEventListeners method to store references to listeners
   private setupEventListeners() {
     // Store key states
     this.keyState = {
@@ -438,8 +452,9 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       ArrowLeft: 'Left'
     };
   
-    // Handle key down events
-    window.addEventListener('keydown', (event) => {
+
+    // Define key down handler
+    this.keydownListener = (event) => {
       // Update key state
       if (this.keyState.hasOwnProperty(event.code)) {
         this.keyState[event.code] = true;
@@ -462,18 +477,94 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       }
       
       this.updateBoundingBox();
-    });
-  
-    // Handle key up events to reset key states
-    window.addEventListener('keyup', (event) => {
+    };
+    this.keyupListener = (event) => {
       if (this.keyState.hasOwnProperty(event.code)) {
         this.keyState[event.code] = false;
       }
-    });
+    };
+
+    // Add event listeners
+    window.addEventListener('keydown', this.keydownListener);
+    window.addEventListener('keyup', this.keyupListener);
   }
 
   // Method for disposing elements
   ngOnDestroy() {
+    // Cancel animation frame
+    if (this.animationFrameId !== null) {
+      cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = null;
+    }
+    
+    // Remove event listeners
+    if (this.keydownListener) {
+      window.removeEventListener('keydown', this.keydownListener);
+      this.keydownListener = null;
+    }
+    
+    if (this.keyupListener) {
+      window.removeEventListener('keyup', this.keyupListener);
+      this.keyupListener = null;
+    }
+    
+    // Unsubscribe from route subscription
+    if (this.routeSubscription) {
+      this.routeSubscription.unsubscribe();
+      this.routeSubscription = null;
+    }
+    
+    // Dispose of THREE.js objects
+    if (this.pointCloud) {
+      this.scene.remove(this.pointCloud);
+      this.pointCloud.geometry.dispose();
+      (this.pointCloud.material as THREE.Material).dispose();
+      this.pointCloud = null;
+    }
+    
+    if (this.boundingBoxMesh) {
+      this.scene.remove(this.boundingBoxMesh);
+      
+      // If it's a group, dispose of all children
+      if (this.boundingBoxMesh instanceof THREE.Group) {
+        this.boundingBoxMesh.children.forEach((child) => {
+          if (child instanceof THREE.LineSegments) {
+            child.geometry.dispose();
+            (child.material as THREE.Material).dispose();
+          }
+        });
+      } else if (this.boundingBoxMesh instanceof THREE.LineSegments) {
+        this.boundingBoxMesh.geometry.dispose();
+        (this.boundingBoxMesh.material as THREE.Material).dispose();
+      }
+      
+      this.boundingBoxMesh = null;
+    }
+    
+    // Dispose of TrackballControls
+    if (this.trackballControls) {
+      this.trackballControls.dispose();
+    }
+    
+    // Remove axesHelper
+    if (this.axesHelper) {
+      this.scene.remove(this.axesHelper);
+    }
+    
+    // Clear the scene
+    while(this.scene.children.length > 0) { 
+      const object = this.scene.children[0];
+      this.scene.remove(object);
+    }
+    
+    // Dispose of renderer
+    if (this.renderer) {
+      this.renderer.dispose();
+      // Clear the DOM element
+      if (this.rendererContainer && this.rendererContainer.nativeElement) {
+        this.rendererContainer.nativeElement.innerHTML = '';
+      }
+    }
   }
 
   // TODO: Color not updating after select
