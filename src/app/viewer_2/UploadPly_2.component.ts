@@ -267,7 +267,7 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       
       // Load bounding box file
       const file = this.type === 'default' ? '3dbbox_ground_no_icp' : '3dbox_refined'; 
-      fetch(`${decodedPath}/3dbbox_ground_no_icp.json`)
+      fetch(`${decodedPath}/${file}.json`)
         .then(response => {
           if (!response.ok) {
             throw new Error(`Failed to load bounding box file: ${response.status} ${response.statusText}`);
@@ -584,7 +584,7 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       
       if (i === this.selectedBoundingBoxIndex) {
         // Highlight the selected box
-        material.color.set(0xff33ff); // purple
+        material.color.set(0x0000ff); // purple
         material.linewidth = 2;
       } else {
         // Make other boxes red
