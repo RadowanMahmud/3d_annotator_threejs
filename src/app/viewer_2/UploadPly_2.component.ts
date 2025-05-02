@@ -390,16 +390,16 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       // Rotations (R + axis + direction)
       R: {
         X: {
-          Right: (idx) => { this.boundingBoxEditData[idx].rotationX += 0.01; },
-          Left: (idx) => { this.boundingBoxEditData[idx].rotationX -= 0.01; }
+          Right: (idx) => { this.applyLocalRotation(idx, 'X', 0.01); },
+          Left: (idx) => { this.applyLocalRotation(idx, 'X', -0.01); }
         },
         Y: {
-          Right: (idx) => { this.boundingBoxEditData[idx].rotationY += 0.01; },
-          Left: (idx) => { this.boundingBoxEditData[idx].rotationY -= 0.01; }
+          Right: (idx) => { this.applyLocalRotation(idx, 'Y', 0.01); },
+          Left: (idx) => { this.applyLocalRotation(idx, 'Y', -0.01); }
         },
         Z: {
-          Right: (idx) => { this.boundingBoxEditData[idx].rotationZ += 0.01; },
-          Left: (idx) => { this.boundingBoxEditData[idx].rotationZ -= 0.01; }
+          Right: (idx) => { this.applyLocalRotation(idx, 'Z', 0.01); },
+          Left: (idx) => { this.applyLocalRotation(idx, 'Z', -0.01); }
         }
       },
       // Positions/Centers (C + axis + direction)
@@ -604,6 +604,47 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       this.updateLocalAxesHelper();
     }, 10);
     
+  }
+
+  private applyLocalRotation(boxIndex: number, axis: 'X' | 'Y' | 'Z', amount: number) {
+    const boxData = this.boundingBoxEditData[boxIndex];
+    
+    // Create a quaternion for the current rotation
+    const currentRotation = new THREE.Euler(
+      boxData.rotationX, 
+      boxData.rotationY, 
+      boxData.rotationZ, 
+      'ZYX'
+    );
+    const currentQuaternion = new THREE.Quaternion().setFromEuler(currentRotation);
+    
+    // Create local axis vector based on current orientation
+    let localAxis = new THREE.Vector3();
+    
+    if (axis === 'X') {
+      localAxis.set(1, 0, 0).applyQuaternion(currentQuaternion);
+    } else if (axis === 'Y') {
+      localAxis.set(0, 1, 0).applyQuaternion(currentQuaternion);
+    } else { // Z
+      localAxis.set(0, 0, 1).applyQuaternion(currentQuaternion);
+    }
+    
+    // Create rotation around that local axis
+    const incrementalQuaternion = new THREE.Quaternion().setFromAxisAngle(localAxis.normalize(), amount);
+    
+    // Apply the local rotation (multiply the current by the incremental)
+    currentQuaternion.multiply(incrementalQuaternion);
+    
+    // Convert back to Euler angles
+    const newEuler = new THREE.Euler().setFromQuaternion(currentQuaternion, 'ZYX');
+    
+    // Update the rotation values
+    boxData.rotationX = newEuler.x;
+    boxData.rotationY = newEuler.y;
+    boxData.rotationZ = newEuler.z;
+    
+    // Update the bounding box
+    this.updateBoundingBox();
   }
 
   updateBoundingBox() {
