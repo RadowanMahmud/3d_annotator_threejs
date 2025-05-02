@@ -405,16 +405,16 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       // Positions/Centers (C + axis + direction)
       C: {
         X: {
-          Right: (idx) => { this.boundingBoxEditData[idx].centerX += 0.01; },
-          Left: (idx) => { this.boundingBoxEditData[idx].centerX -= 0.01; }
+          Right: (idx) => { this.applyLocalTranslation(idx, 'X', 0.01); },
+          Left: (idx) => { this.applyLocalTranslation(idx, 'X', -0.01); }
         },
         Y: {
-          Right: (idx) => { this.boundingBoxEditData[idx].centerY += 0.01; },
-          Left: (idx) => { this.boundingBoxEditData[idx].centerY -= 0.01; }
+          Right: (idx) => { this.applyLocalTranslation(idx, 'Y', 0.01); },
+          Left: (idx) => { this.applyLocalTranslation(idx, 'Y', -0.01); }
         },
         Z: {
-          Right: (idx) => { this.boundingBoxEditData[idx].centerZ += 0.01; },
-          Left: (idx) => { this.boundingBoxEditData[idx].centerZ -= 0.01; }
+          Right: (idx) => { this.applyLocalTranslation(idx, 'Z', 0.01); },
+          Left: (idx) => { this.applyLocalTranslation(idx, 'Z', -0.01); }
         }
       },
       // Dimensions (D + axis + direction)
@@ -647,6 +647,40 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     this.updateBoundingBox();
   }
 
+  private applyLocalTranslation(boxIndex: number, axis: 'X' | 'Y' | 'Z', amount: number) {
+    const boxData = this.boundingBoxEditData[boxIndex];
+    
+    // Create a quaternion from the current rotation
+    const currentRotation = new THREE.Euler(
+      boxData.rotationX, 
+      boxData.rotationY, 
+      boxData.rotationZ, 
+      'ZYX'
+    );
+    const currentQuaternion = new THREE.Quaternion().setFromEuler(currentRotation);
+    
+    // Create a displacement vector in local coordinates
+    const displacement = new THREE.Vector3();
+    
+    // Set displacement along the appropriate local axis
+    if (axis === 'X') {
+      displacement.set(amount, 0, 0);
+    } else if (axis === 'Y') {
+      displacement.set(0, amount, 0);
+    } else { // Z
+      displacement.set(0, 0, amount);
+    }
+    
+    // Transform displacement to global coordinates based on current rotation
+    displacement.applyQuaternion(currentQuaternion);
+    
+    // Apply the transformed displacement to the center position
+    boxData.centerX += displacement.x;
+    boxData.centerY += displacement.y;
+    boxData.centerZ += displacement.z;
+
+    this.updateBoundingBox()
+  }
   updateBoundingBox() {
     if (!this.boundingBoxMesh || this.boundingBoxEditData.length === 0) {
       return;
