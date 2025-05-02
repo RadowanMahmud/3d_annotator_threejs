@@ -126,10 +126,8 @@ export class FolderExplorerComponent implements OnInit {
   }
   
   openRefinedBox(item: FolderItem): void {
-    if (item.refinedBoxPath) {
-      const encodedPath = encodeURIComponent(item.refinedBoxPath);
+      const encodedPath = encodeURIComponent(item.path);
       this.router.navigate(['/dashboard', encodedPath, 'refined']);
-    }
   }
 
   flattenFolderStructure(): void {
