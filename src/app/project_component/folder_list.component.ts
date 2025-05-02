@@ -43,7 +43,7 @@ export class FolderExplorerComponent implements OnInit {
   flattenedFolderStructure: FolderItem[] = [];
   paginatedItems: FolderItem[] = [];
   selectedFolderPath: string | null = 'assets';
-  apiBaseUrl = 'http://localhost:3000'; // Update with your actual API URL
+  apiBaseUrl = 'http://cvlabhumanrefinement.cs.virginia.edu/api'; // Update with your actual API URL
   
   // Add directory stats
   directoryStats: DirectoryStats = {
