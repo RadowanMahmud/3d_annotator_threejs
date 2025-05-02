@@ -565,6 +565,11 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
         this.rendererContainer.nativeElement.innerHTML = '';
       }
     }
+    // Remove local axes helper if it exists
+    const localAxesHelper = this.scene.getObjectByName('localAxesHelper');
+    if (localAxesHelper) {
+      this.scene.remove(localAxesHelper);
+    }
   }
 
   // TODO: Color not updating after select
@@ -584,8 +589,8 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       
       if (i === this.selectedBoundingBoxIndex) {
         // Highlight the selected box
-        material.color.set(0x0000ff); // purple
-        material.linewidth = 2;
+        material.color.set(0xffff00); // purple
+        material.linewidth = 15;
       } else {
         // Make other boxes red
         material.color.set(0xff0000); // Red
@@ -596,9 +601,9 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     // Force material update
     setTimeout(() => {
       this.renderer.render(this.scene, this.camera);
+      this.updateLocalAxesHelper();
     }, 10);
     
-    console.log(`Selected bounding box: ${this.boundingBoxEditData[this.selectedBoundingBoxIndex].obj_id} - ${this.boundingBoxEditData[this.selectedBoundingBoxIndex].category_name}`);
   }
 
   updateBoundingBox() {
@@ -635,6 +640,8 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       
       positions.needsUpdate = true;
       boxMesh.geometry.computeBoundingSphere();
+      this.updateLocalAxesHelper();
+
     }
     
     // Render the updated scene
@@ -1004,5 +1011,73 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       boxData.dimensionX, boxData.dimensionY, boxData.dimensionZ,
       boxData.rotationX, boxData.rotationY, boxData.rotationZ
     );
+  }
+
+  private updateLocalAxesHelper() {
+    // Remove existing helper if any
+    const existingHelper = this.scene.getObjectByName('localAxesHelper');
+    if (existingHelper) this.scene.remove(existingHelper);
+    
+    if (this.boundingBoxEditData.length === 0 || this.selectedBoundingBoxIndex < 0) return;
+    
+    const boxData = this.boundingBoxEditData[this.selectedBoundingBoxIndex];
+    
+    // Create rotation matrix from euler angles
+    const rotation = new THREE.Euler(
+      boxData.rotationX, 
+      boxData.rotationY, 
+      boxData.rotationZ, 
+      'ZYX'
+    );
+    const quaternion = new THREE.Quaternion().setFromEuler(rotation);
+    
+    // Create axis helpers - use a smaller size than global axes
+    const axisLength = Math.max(
+      boxData.dimensionX, 
+      boxData.dimensionY, 
+      boxData.dimensionZ
+    ) * 1.2;
+    
+    // Create custom axes helper with thick lines
+    const axesGroup = new THREE.Group();
+    axesGroup.name = 'localAxesHelper';
+    
+    // X axis - red
+    const xAxisGeometry = new THREE.BufferGeometry();
+    xAxisGeometry.setAttribute('position', new THREE.Float32BufferAttribute([
+      0, 0, 0, axisLength, 0, 0
+    ], 3));
+    const xAxisMaterial = new THREE.LineBasicMaterial({ color: 0xff0000, linewidth: 10 });
+    const xAxis = new THREE.Line(xAxisGeometry, xAxisMaterial);
+    
+    // Y axis - green
+    const yAxisGeometry = new THREE.BufferGeometry();
+    yAxisGeometry.setAttribute('position', new THREE.Float32BufferAttribute([
+      0, 0, 0, 0, axisLength, 0
+    ], 3));
+    const yAxisMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00, linewidth: 10 });
+    const yAxis = new THREE.Line(yAxisGeometry, yAxisMaterial);
+    
+    // Z axis - blue
+    const zAxisGeometry = new THREE.BufferGeometry();
+    zAxisGeometry.setAttribute('position', new THREE.Float32BufferAttribute([
+      0, 0, 0, 0, 0, axisLength
+    ], 3));
+    const zAxisMaterial = new THREE.LineBasicMaterial({ color: 0x0000ff, linewidth: 10 });
+    const zAxis = new THREE.Line(zAxisGeometry, zAxisMaterial);
+    
+    // Add axes to group
+    axesGroup.add(xAxis);
+    axesGroup.add(yAxis);
+    axesGroup.add(zAxis);
+    
+    // Position and rotate the axes helper
+    axesGroup.position.set(boxData.centerX, boxData.centerY, boxData.centerZ);
+    axesGroup.quaternion.copy(quaternion);
+    
+    this.scene.add(axesGroup);
+    
+    // Make sure the scene is rendered
+    this.renderer.render(this.scene, this.camera);
   }
 }
