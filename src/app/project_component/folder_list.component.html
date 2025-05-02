@@ -66,11 +66,11 @@
             </td>
             <td>
               <!-- Toggle button for folders with children -->
-              <button *ngIf="item.isFolder && item.children?.length" 
+              <!-- <button *ngIf="item.isFolder && item.children?.length" 
                       (click)="toggleFolder(item)"
                       class="toggle-button">
                 {{ item.isExpanded ? 'Collapse' : 'Expand' }}
-              </button>
+              </button> -->
               
               <!-- Open Dashboard button ONLY for top-level folders (level = 0) -->
               <button *ngIf="item.isFolder && item.level === 0" 

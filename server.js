@@ -80,7 +80,7 @@ app.get('/api/directory', (req, res) => {
                 
                 if (isFolder) {
                     folderItem.isExpanded = false;
-                    folderItem.children = buildDirectoryStructure(itemPath, relativePath, level + 1);
+                    // folderItem.children = buildDirectoryStructure(itemPath, relativePath, level + 1);
                 }
                 
                 structure.push(folderItem);
