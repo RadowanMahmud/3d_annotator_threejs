@@ -584,7 +584,7 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       
       if (i === this.selectedBoundingBoxIndex) {
         // Highlight the selected box
-        material.color.set(0xffff00); // Yellow
+        material.color.set(0xff33ff); // purple
         material.linewidth = 2;
       } else {
         // Make other boxes red
