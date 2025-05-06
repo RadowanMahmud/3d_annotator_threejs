@@ -34,27 +34,27 @@ interface BoundingBoxEditData {
 }
 
 @Component({
-    selector: 'app-ply-two-viewer',
-    imports: [CommonModule, FormsModule, ImageViewerComponent],
-    standalone: true,
-    templateUrl: './UploadPly_2.component.html',
-    styleUrl: './UploadPly_2.component.css'
-  })
+  selector: 'app-ply-two-viewer',
+  imports: [CommonModule, FormsModule, ImageViewerComponent],
+  standalone: true,
+  templateUrl: './UploadPly_2.component.html',
+  styleUrl: './UploadPly_2.component.css'
+})
 export class PlyViewer2Component implements OnInit, OnDestroy {
-  @ViewChild('rendererContainer', { static: true }) 
+  @ViewChild('rendererContainer', { static: true })
   rendererContainer!: ElementRef;
 
   private scene!: THREE.Scene;
   private camera!: THREE.PerspectiveCamera;
   private renderer!: THREE.WebGLRenderer;
   private trackballControls!: TrackballControls;
-  
+
   private pointCloud: THREE.Points | null = null;
   private boundingBoxMesh: THREE.Group | THREE.LineSegments | null = null;
 
   private axesHelper!: THREE.AxesHelper;
   isEditMode = false;
-  selectedBoundingBoxIndex : number = 0;
+  selectedBoundingBoxIndex: number = 0;
 
   boundingJsonBoxData: BoundingBoxData[] = [];
 
@@ -72,9 +72,9 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
   optOutSuccess: boolean = false;
 
   constructor(
-    private route: ActivatedRoute, 
+    private route: ActivatedRoute,
     private http: HttpClient
-  ) {}
+  ) { }
 
   pointCloudStats: {
     points: number;
@@ -109,7 +109,7 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       this.loadDataFromPath(this.basePath);
       this.checkOptOutStatus();
     });
-    
+
     this.initScene();
     this.animate();
     this.setupEventListeners();
@@ -117,10 +117,10 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
 
   private checkOptOutStatus() {
     if (!this.decoded_path) return;
-    
+
     const id = this.getDirectoryIdFromPath();
     if (!id) return;
-    
+
     fetch(`${this.decoded_path}/deleted.json`)
       .then((response: any) => {
         if (response.ok) {
@@ -150,11 +150,11 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       this.showOptOutMessage(false, 'Invalid directory path');
       return;
     }
-    
+
     if (this.optOutChecked) {
       // Create deleted.json file
       const deleteData = { deleted: true, timestamp: new Date().toISOString() };
-      
+
       fetch(`http://cvlabhumanrefinement.cs.virginia.edu/api/save/${id}/deleted`, {
         method: 'POST',
         headers: {
@@ -162,17 +162,17 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
         },
         body: JSON.stringify(deleteData)
       })
-      .then(response => response.json())
-      .then(result => {
-        if (result.success) {
-          this.showOptOutMessage(true, 'Successfully marked for deletion');
-        } else {
-          this.showOptOutMessage(false, 'Failed to mark for deletion: ' + result.error);
-        }
-      })
-      .catch(error => {
-        this.showOptOutMessage(false, 'Network error: ' + error.message);
-      });
+        .then(response => response.json())
+        .then(result => {
+          if (result.success) {
+            this.showOptOutMessage(true, 'Successfully marked for deletion');
+          } else {
+            this.showOptOutMessage(false, 'Failed to mark for deletion: ' + result.error);
+          }
+        })
+        .catch(error => {
+          this.showOptOutMessage(false, 'Network error: ' + error.message);
+        });
     } else {
       // Remove the deleted.json file (if API supports it, otherwise maintain local state)
       this.optOutStatus = false;
@@ -180,19 +180,19 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       // You might want to add actual file deletion endpoint later
     }
   }
-  
+
   // Helper method to show opt-out status messages
   private showOptOutMessage(success: boolean, message: string) {
     this.optOutStatus = true;
     this.optOutSuccess = success;
     this.optOutMessage = message;
-    
+
     // Hide message after 5 seconds
     setTimeout(() => {
       this.optOutStatus = false;
     }, 5000);
   }
-  
+
   // Helper method to extract directory ID from path
   private getDirectoryIdFromPath(): string | null {
     if (!this.decoded_path) return null;
@@ -205,18 +205,18 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     if (this.selectedBoundingBoxIndex === null || this.boundingBoxEditData.length === 0) {
       return;
     }
-    
+
     // Remove from editing data array
     this.boundingBoxEditData.splice(this.selectedBoundingBoxIndex, 1);
-    
+
     // Remove from JSON data array for export
     this.boundingJsonBoxData.splice(this.selectedBoundingBoxIndex, 1);
-    
+
     // Remove from scene
     if (this.boundingBoxMesh instanceof THREE.Group) {
       this.boundingBoxMesh.remove(this.boundingBoxMesh.children[this.selectedBoundingBoxIndex]);
     }
-    
+
     // If there are no more bounding boxes, handle empty state
     if (this.boundingBoxEditData.length === 0) {
       this.selectedBoundingBoxIndex = -1;
@@ -228,12 +228,12 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     } else {
       // Select next available box or the last one
       this.selectedBoundingBoxIndex = Math.min(
-        this.selectedBoundingBoxIndex, 
+        this.selectedBoundingBoxIndex,
         this.boundingBoxEditData.length - 1
       );
       this.onBoundingBoxSelect();
     }
-    
+
     // Update the scene
     this.renderer.render(this.scene, this.camera);
   }
@@ -243,11 +243,11 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       // Reset loading flags
       this.isDepthFileLoaded = false;
       this.isBoundingBoxLoaded = false;
-      
+
       // Decode the path if it was URL-encoded
       const decodedPath = decodeURIComponent(path);
       this.decoded_path = decodedPath;
-      
+
       // Load PLY file
       fetch(`${decodedPath}/depth_scene.ply`)
         .then(response => {
@@ -264,9 +264,9 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
         .catch(error => {
           console.error('Error loading PLY file:', error);
         });
-      
+
       // Load bounding box file
-      const file = this.type === 'default' ? '3dbbox_ground_no_icp' : '3dbox_refined'; 
+      const file = this.type === 'default' ? '3dbbox_ground_no_icp' : '3dbox_refined';
       fetch(`${decodedPath}/${file}.json`)
         .then(response => {
           if (!response.ok) {
@@ -288,7 +288,7 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     }
   }
 
-    // New method to check if both files are loaded and initialize the scene
+  // New method to check if both files are loaded and initialize the scene
   private checkInitializeScene() {
     if (this.isDepthFileLoaded && this.isBoundingBoxLoaded) {
       console.log('Both files loaded, starting animation');
@@ -310,36 +310,36 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
 
     const container = this.rendererContainer.nativeElement;
 
-    this.renderer = new THREE.WebGLRenderer({ 
+    this.renderer = new THREE.WebGLRenderer({
       antialias: true,
-      alpha: true 
+      alpha: true
     });
     this.renderer.setPixelRatio(window.devicePixelRatio);
-    
+
     this.renderer.setSize(
-      container.clientWidth || window.innerWidth, 
+      container.clientWidth || window.innerWidth,
       container.clientHeight || 500
     );
-    
+
     container.innerHTML = '';
     container.appendChild(this.renderer.domElement);
 
     this.camera = new THREE.PerspectiveCamera(
-      45, 
-      (container.clientWidth || window.innerWidth) / (container.clientHeight || 500), 
-      0.1, 
+      45,
+      (container.clientWidth || window.innerWidth) / (container.clientHeight || 500),
+      0.1,
       1000
     );
 
     this.trackballControls = new TrackballControls(this.camera, this.renderer.domElement);
-    
+
     this.trackballControls.rotateSpeed = 1.0;
     this.trackballControls.zoomSpeed = 1.2;
     this.trackballControls.panSpeed = 0.8;
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
     this.scene.add(ambientLight);
-    
+
     const directionalLight1 = new THREE.DirectionalLight(0xffffff, 0.5);
     directionalLight1.position.set(1, 1, 1);
     this.scene.add(directionalLight1);
@@ -357,12 +357,12 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
   // Modified animate method to store the animation frame ID
   private animate = () => {
     this.animationFrameId = requestAnimationFrame(this.animate);
-    
+
     // Update trackball controls when not in edit mode
     if (!this.isEditMode) {
       this.trackballControls.update();
     }
-    
+
     // Render the scene
     this.renderer.render(this.scene, this.camera);
   }
@@ -380,11 +380,11 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       ArrowRight: false,
       ArrowLeft: false
     };
-  
+
     type ModeName = 'R' | 'C' | 'D';
     type AxisName = 'X' | 'Y' | 'Z';
     type DirectionName = 'Right' | 'Left';
-    
+
     // Define actions based on key combinations with proper typing
     const keyActions: Record<ModeName, Record<AxisName, Record<DirectionName, (idx: number) => void>>> = {
       // Rotations (R + axis + direction)
@@ -433,25 +433,25 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
         }
       }
     };
-  
+
     // Map keyboard codes to action keys with explicit typing
     const modeMap: Record<string, ModeName | undefined> = {
       KeyR: 'R',
       KeyC: 'C',
       KeyD: 'D'
     };
-    
+
     const axisMap: Record<string, AxisName | undefined> = {
       KeyX: 'X',
       KeyY: 'Y',
       KeyZ: 'Z'
     };
-    
+
     const directionMap: Record<string, DirectionName | undefined> = {
       ArrowRight: 'Right',
       ArrowLeft: 'Left'
     };
-  
+
 
     // Define key down handler
     this.keydownListener = (event) => {
@@ -463,19 +463,19 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       // Process all key combinations in a type-safe way
       for (const [modeCode, modeKey] of Object.entries(modeMap)) {
         if (!this.keyState[modeCode] || !modeKey) continue;
-        
+
         for (const [axisCode, axisKey] of Object.entries(axisMap)) {
           if (!this.keyState[axisCode] || !axisKey) continue;
-          
+
           for (const [dirCode, dirKey] of Object.entries(directionMap)) {
             if (!this.keyState[dirCode] || !dirKey) continue;
-            
+
             // Apply the action
             keyActions[modeKey][axisKey][dirKey](this.selectedBoundingBoxIndex);
           }
         }
       }
-      
+
       this.updateBoundingBox();
     };
     this.keyupListener = (event) => {
@@ -496,24 +496,24 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       cancelAnimationFrame(this.animationFrameId);
       this.animationFrameId = null;
     }
-    
+
     // Remove event listeners
     if (this.keydownListener) {
       window.removeEventListener('keydown', this.keydownListener);
       this.keydownListener = null;
     }
-    
+
     if (this.keyupListener) {
       window.removeEventListener('keyup', this.keyupListener);
       this.keyupListener = null;
     }
-    
+
     // Unsubscribe from route subscription
     if (this.routeSubscription) {
       this.routeSubscription.unsubscribe();
       this.routeSubscription = null;
     }
-    
+
     // Dispose of THREE.js objects
     if (this.pointCloud) {
       this.scene.remove(this.pointCloud);
@@ -521,10 +521,10 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       (this.pointCloud.material as THREE.Material).dispose();
       this.pointCloud = null;
     }
-    
+
     if (this.boundingBoxMesh) {
       this.scene.remove(this.boundingBoxMesh);
-      
+
       // If it's a group, dispose of all children
       if (this.boundingBoxMesh instanceof THREE.Group) {
         this.boundingBoxMesh.children.forEach((child) => {
@@ -537,26 +537,26 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
         this.boundingBoxMesh.geometry.dispose();
         (this.boundingBoxMesh.material as THREE.Material).dispose();
       }
-      
+
       this.boundingBoxMesh = null;
     }
-    
+
     // Dispose of TrackballControls
     if (this.trackballControls) {
       this.trackballControls.dispose();
     }
-    
+
     // Remove axesHelper
     if (this.axesHelper) {
       this.scene.remove(this.axesHelper);
     }
-    
+
     // Clear the scene
-    while(this.scene.children.length > 0) { 
+    while (this.scene.children.length > 0) {
       const object = this.scene.children[0];
       this.scene.remove(object);
     }
-    
+
     // Dispose of renderer
     if (this.renderer) {
       this.renderer.dispose();
@@ -578,15 +578,15 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       return;
     }
     console.log(this.selectedBoundingBoxIndex)
-    
+
     // Update the visibility and appearance of the bounding boxes
     const boxGroup = this.boundingBoxMesh as THREE.Group;
-    
+
     // Go through each child (each bounding box)
     for (let i = 0; i < boxGroup.children.length; i++) {
       const boxMesh = boxGroup.children[i] as THREE.LineSegments;
       const material = boxMesh.material as THREE.LineBasicMaterial;
-      
+
       if (i === this.selectedBoundingBoxIndex) {
         // Highlight the selected box
         material.color.set(0xffff00); // purple
@@ -597,63 +597,63 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
         material.linewidth = 1;
       }
     }
-    
+
     // Force material update
     setTimeout(() => {
       this.renderer.render(this.scene, this.camera);
       this.updateLocalAxesHelper();
     }, 10);
-    
+
   }
 
   private applyLocalRotation(boxIndex: number, axis: 'X' | 'Y' | 'Z', amount: number) {
     const boxData = this.boundingBoxEditData[boxIndex];
-    
+
     // Create a temporary object to handle the rotations
     const tempObject = new THREE.Object3D();
-    
+
     // Set initial rotation from boxData
     tempObject.rotation.set(
-        boxData.rotationX,
-        boxData.rotationY,
-        boxData.rotationZ,
-        'ZYX'
+      boxData.rotationX,
+      boxData.rotationY,
+      boxData.rotationZ,
+      'ZYX'
     );
-    
+
     // Apply the rotation directly using Object3D's methods
     // This will rotate around the object's local axes
     if (axis === 'X') {
-        tempObject.rotateX(amount);
+      tempObject.rotateX(amount);
     } else if (axis === 'Y') {
-        tempObject.rotateY(amount);
+      tempObject.rotateY(amount);
     } else { // Z
-        tempObject.rotateZ(amount);
+      tempObject.rotateZ(amount);
     }
-    
+
     // The rotateX/Y/Z methods rotate around the local object axes
     // Extract the resulting Euler angles
     boxData.rotationX = tempObject.rotation.x;
     boxData.rotationY = tempObject.rotation.y;
     boxData.rotationZ = tempObject.rotation.z;
-    
+
     // Update the bounding box
     this.updateBoundingBox();
   }
   private applyLocalTranslation(boxIndex: number, axis: 'X' | 'Y' | 'Z', amount: number) {
     const boxData = this.boundingBoxEditData[boxIndex];
-    
+
     // Create a quaternion from the current rotation
     const currentRotation = new THREE.Euler(
-      boxData.rotationX, 
-      boxData.rotationY, 
-      boxData.rotationZ, 
+      boxData.rotationX,
+      boxData.rotationY,
+      boxData.rotationZ,
       'ZYX'
     );
     const currentQuaternion = new THREE.Quaternion().setFromEuler(currentRotation);
-    
+
     // Create a displacement vector in local coordinates
     const displacement = new THREE.Vector3();
-    
+
     // Set displacement along the appropriate local axis
     if (axis === 'X') {
       displacement.set(amount, 0, 0);
@@ -662,10 +662,10 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     } else { // Z
       displacement.set(0, 0, amount);
     }
-    
+
     // Transform displacement to global coordinates based on current rotation
     displacement.applyQuaternion(currentQuaternion);
-    
+
     // Apply the transformed displacement to the center position
     boxData.centerX += displacement.x;
     boxData.centerY += displacement.y;
@@ -677,40 +677,40 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     if (!this.boundingBoxMesh || this.boundingBoxEditData.length === 0) {
       return;
     }
-    
+
     // Get the selected bounding box data
     const boxData = this.boundingBoxEditData[this.selectedBoundingBoxIndex];
-    
+
     const vertices = this.createBoxVerticesFromParams(boxData);
-    
+
     // Update the geometry of the selected bounding box
     if (this.boundingBoxMesh instanceof THREE.Group) {
       // Get the selected box mesh
       const boxMesh = this.boundingBoxMesh.children[this.selectedBoundingBoxIndex] as THREE.LineSegments;
-      
+
       // Update geometry positions
       const positions = boxMesh.geometry.attributes['position'] as THREE.BufferAttribute;
-      
+
       // Define edges of the bounding box
       const edgeIndices = [
         0, 1, 1, 2, 2, 3, 3, 0,  // First face
         4, 5, 5, 6, 6, 7, 7, 4,  // Second face
         0, 4, 1, 5, 2, 6, 3, 7   // Connecting lines between faces
       ];
-      
+
       // Update vertex positions
       for (let i = 0; i < edgeIndices.length; i++) {
         const vertexIndex = edgeIndices[i];
         const vertex = vertices[vertexIndex];
         positions.setXYZ(i, vertex[0], vertex[1], vertex[2]);
       }
-      
+
       positions.needsUpdate = true;
       boxMesh.geometry.computeBoundingSphere();
       this.updateLocalAxesHelper();
 
     }
-    
+
     // Render the updated scene
     this.renderer.render(this.scene, this.camera);
 
@@ -718,7 +718,7 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
 
     this.boundingJsonBoxData = [...this.boundingJsonBoxData]
   }
-  
+
 
   private calculateBoundingBoxVertices(
     centerX: number, centerY: number, centerZ: number,
@@ -730,60 +730,60 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     const halfL = length / 2;  // X
     const halfH = height / 2;  // Y
     const halfW = width / 2;   // Z
-  
+
     const rotation = new THREE.Euler(rotX, rotY, rotZ, 'ZYX');
     const rotationMatrix = new THREE.Matrix4().makeRotationFromEuler(rotation);
-  
+
     // Match Python vertex layout exactly
     const vertices = [
       new THREE.Vector3(-halfL, -halfH, -halfW), // v0
-      new THREE.Vector3( halfL, -halfH, -halfW), // v1
-      new THREE.Vector3( halfL,  halfH, -halfW), // v2
-      new THREE.Vector3(-halfL,  halfH, -halfW), // v3
-      new THREE.Vector3(-halfL, -halfH,  halfW), // v4
-      new THREE.Vector3( halfL, -halfH,  halfW), // v5
-      new THREE.Vector3( halfL,  halfH,  halfW), // v6
-      new THREE.Vector3(-halfL,  halfH,  halfW)  // v7
+      new THREE.Vector3(halfL, -halfH, -halfW), // v1
+      new THREE.Vector3(halfL, halfH, -halfW), // v2
+      new THREE.Vector3(-halfL, halfH, -halfW), // v3
+      new THREE.Vector3(-halfL, -halfH, halfW), // v4
+      new THREE.Vector3(halfL, -halfH, halfW), // v5
+      new THREE.Vector3(halfL, halfH, halfW), // v6
+      new THREE.Vector3(-halfL, halfH, halfW)  // v7
     ];
-  
+
     return vertices.map(v => v.clone().applyMatrix4(rotationMatrix).add(center))
-                   .map(v => [v.x, v.y, v.z]);
+      .map(v => [v.x, v.y, v.z]);
   }
-  
+
 
   exportBoundingBoxesToJSON() {
     for (let i = 0; i < this.boundingJsonBoxData.length; i++) {
       const bboxData = this.boundingJsonBoxData[i];
-      
+
       // Extract vertices from bbox3D_cam
       const bbox3D = bboxData.bbox3D_cam;
-      
+
       // Store bounding box edit data
       const v0 = new THREE.Vector3(...bbox3D[0]);
       const v1 = new THREE.Vector3(...bbox3D[1]);
       const v3 = new THREE.Vector3(...bbox3D[3]);
       const v4 = new THREE.Vector3(...bbox3D[4]);
-    
+
       // Axes from v0
       const xAxis = new THREE.Vector3().subVectors(v1, v0).normalize(); // length
       const yAxis = new THREE.Vector3().subVectors(v3, v0).normalize(); // height
       const zAxis = new THREE.Vector3().subVectors(v4, v0).normalize(); // width
-    
+
       // Reconstruct rotation matrix (3x3)
       const rotationMatrix = new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis);
-    
+
       // Compute center as average of all vertices
       const center = bbox3D.reduce((acc, v) => {
         acc[0] += v[0]; acc[1] += v[1]; acc[2] += v[2];
         return acc;
       }, [0, 0, 0]).map(c => c / 8);
-    
+
       // Compute dimensions from distances
       const width = v1.distanceTo(v0);  // X
       const length = v3.distanceTo(v0);  // Y
-      const height  = v4.distanceTo(v0);  // Z
+      const height = v4.distanceTo(v0);  // Z
 
-      const obj_id =  bboxData.obj_id;
+      const obj_id = bboxData.obj_id;
       const category_name = bboxData.category_name;
 
       this.boundingJsonBoxData[i].center_cam = center
@@ -798,7 +798,7 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     // Call the API to save the file on the server
     const jsonContent = JSON.stringify(this.boundingJsonBoxData, null, 2);
     const id = this.decoded_path.split('/')[this.decoded_path.split('/').length - 1];
-    
+
     // Call the API to save the file on the server
     fetch(`http://cvlabhumanrefinement.cs.virginia.edu/api/save/${id}`, {
       method: 'POST',
@@ -807,25 +807,25 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       },
       body: jsonContent
     })
-    .then(response => response.json())
-    .then(result => {
-      if (result.success) {
-        console.log('File saved successfully on server:', result.path);
-        alert('File saved');
-        // You could display a success message to the user here
-      } else {
-        console.error('Error saving file:', result.error);
-        alert('Error saving file: ' + result.error);
-      }
-    })
-    .catch(error => {
-      console.error('Failed to communicate with server:', error);
-      alert('Failed to communicate with server: ' + error.message);
-    });
+      .then(response => response.json())
+      .then(result => {
+        if (result.success) {
+          console.log('File saved successfully on server:', result.path);
+          alert('File saved');
+          // You could display a success message to the user here
+        } else {
+          console.error('Error saving file:', result.error);
+          alert('Error saving file: ' + result.error);
+        }
+      })
+      .catch(error => {
+        console.error('Failed to communicate with server:', error);
+        alert('Failed to communicate with server: ' + error.message);
+      });
   }
 
   // code to handle file uploads
-  onFileUpload(event: Event, type: string){
+  onFileUpload(event: Event, type: string) {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
 
@@ -837,7 +837,7 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
         const arrayBuffer = e.target?.result as ArrayBuffer;
         this.loadPLYFile(arrayBuffer);
       };
-    }  
+    }
     reader.readAsArrayBuffer(file);
   }
   onJSONFileUpload(event: Event) {
@@ -859,17 +859,18 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     const boundingBox = new THREE.Box3().setFromObject(object);
     const size = boundingBox.getSize(new THREE.Vector3());
     const maxDim = Math.max(size.x, size.y, size.z);
-    
+
     // Compute the distance to fit the object
     const fitHeightDistance = maxDim / (2 * Math.atan(Math.PI / 4));
     const fitWidthDistance = fitHeightDistance / this.camera.aspect;
     const distance = 1.5 * Math.max(fitHeightDistance, fitWidthDistance);
 
     const center = boundingBox.getCenter(new THREE.Vector3());
-    
-    // Position camera
+
+    // Position camera with 180-degree vertical rotation
     this.camera.position.copy(center);
-    this.camera.position.z += distance;
+    this.camera.position.z -= distance; // Move camera to opposite side
+    this.camera.up.set(0, -1, 0); // Flip the up vector to rotate view 180 degrees
     this.camera.lookAt(center);
 
     // Update trackball controls
@@ -878,57 +879,57 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
 
     // Reposition axes helper to object center
     this.axesHelper.position.copy(center);
-  }             
+  }
   private loadPLYFile(arrayBuffer: ArrayBuffer) {
     // Remove existing point cloud
     if (this.pointCloud) {
       this.scene.remove(this.pointCloud);
     }
-  
+
     // Create PLY loader
     const loader = new PLYLoader();
     const geometry = loader.parse(arrayBuffer);
-  
+
     // Apply coordinate transformation to geometry
     const positions = geometry.getAttribute('position');
     const transformedPositions = new Float32Array(positions.count * 3);
-  
+
     for (let i = 0; i < positions.count; i++) {
       const vertex = new THREE.Vector3(
         positions.getX(i),
         positions.getY(i),
         positions.getZ(i)
       );
-  
+
       transformedPositions[i * 3] = vertex.x;
       transformedPositions[i * 3 + 1] = vertex.y;
       transformedPositions[i * 3 + 2] = vertex.z;
     }
-  
+
     // Replace original positions with transformed positions
     geometry.setAttribute('position', new THREE.BufferAttribute(transformedPositions, 3));
-  
+
     // Prepare color material
     let material: THREE.PointsMaterial;
-    
+
     // Check if geometry has color attribute
     if (geometry.hasAttribute('color')) {
       // Use vertex colors if available
-      material = new THREE.PointsMaterial({ 
+      material = new THREE.PointsMaterial({
         size: this.pointSize,
         vertexColors: true
       });
     } else {
       // Fallback to default green color
-      material = new THREE.PointsMaterial({ 
+      material = new THREE.PointsMaterial({
         color: 0x00ff00,
         size: this.pointSize
       });
     }
-  
+
     // Create point cloud without centering
     this.pointCloud = new THREE.Points(geometry, material);
-  
+
     // Update point cloud stats
     geometry.computeBoundingBox();
     const boundingBox = geometry.boundingBox;
@@ -941,10 +942,10 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
         }
       };
     }
-  
+
     // Add to scene at original position
     this.scene.add(this.pointCloud);
-  
+
     // Adjust camera to view the entire point cloud
     this.fitCameraToObject(this.pointCloud);
   }
@@ -954,10 +955,10 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       this.scene.remove(this.boundingBoxMesh);
       this.boundingBoxMesh = null;
     }
-    
+
     // Clear existing bounding box data
     this.boundingBoxEditData = [];
-  
+
     try {
       const data: BoundingBoxData[] = JSON.parse(jsonContent);
       this.boundingJsonBoxData = data;
@@ -965,46 +966,46 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
         console.warn('No bounding box data found in JSON');
         return;
       }
-  
+
       // Create a group to hold all bounding boxes
       const boxGroup = new THREE.Group();
-      
+
       // Process all bounding boxes in the file
       for (let i = 0; i < data.length; i++) {
         const bboxData = data[i];
-        
+
         // Extract vertices from bbox3D_cam
         const bbox3D = bboxData.bbox3D_cam;
-        
+
         // Store bounding box edit data
         const v0 = new THREE.Vector3(...bbox3D[0]);
         const v1 = new THREE.Vector3(...bbox3D[1]);
         const v3 = new THREE.Vector3(...bbox3D[3]);
         const v4 = new THREE.Vector3(...bbox3D[4]);
-      
+
         // Axes from v0
         const xAxis = new THREE.Vector3().subVectors(v1, v0).normalize(); // length
         const yAxis = new THREE.Vector3().subVectors(v3, v0).normalize(); // height
         const zAxis = new THREE.Vector3().subVectors(v4, v0).normalize(); // width
-      
+
         // Reconstruct rotation matrix (3x3)
         const rotationMatrix = new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis);
         const euler = new THREE.Euler().setFromRotationMatrix(rotationMatrix, 'ZYX');
-      
+
         // Compute center as average of all vertices
         const center = bbox3D.reduce((acc, v) => {
           acc[0] += v[0]; acc[1] += v[1]; acc[2] += v[2];
           return acc;
         }, [0, 0, 0]).map(c => c / 8);
-      
+
         // Compute dimensions from distances
         const width = v1.distanceTo(v0);  // X
         const length = v3.distanceTo(v0);  // Y
-        const height  = v4.distanceTo(v0);  // Z
+        const height = v4.distanceTo(v0);  // Z
 
-        const obj_id =  bboxData.obj_id;
+        const obj_id = bboxData.obj_id;
         const category_name = bboxData.category_name;
-      
+
         // Push reconstructed data
         this.boundingBoxEditData.push({
           obj_id,
@@ -1019,56 +1020,56 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
           rotationY: euler.y,
           rotationZ: euler.z
         });
-        
+
         // Create and add individual bounding box
         // const vertices = this.createBoxVerticesFromParams(this.boundingBoxEditData[i]);
         // const boxMesh = this.createIndividualBoundingBoxMesh(vertices, i === 0);
         const boxMesh = this.createIndividualBoundingBoxMesh(bbox3D, i === 0);
         boxGroup.add(boxMesh);
       }
-      
+
       // Add the group to the scene
       this.boundingBoxMesh = boxGroup;
       this.scene.add(this.boundingBoxMesh);
-      
+
       // Set the first box as selected by default
       if (this.boundingBoxEditData.length > 0) {
         this.selectedBoundingBoxIndex = 0;
         this.onBoundingBoxSelect();
       }
-      
+
     } catch (error) {
       console.error('Error parsing JSON:', error);
     }
   }
-  
+
   private createIndividualBoundingBoxMesh(vertices: number[][], isSelected: boolean = false): THREE.LineSegments {
     const geometry = new THREE.BufferGeometry();
-  
+
     // Define edges of the bounding box
     const edgeIndices = [
       0, 1, 1, 2, 2, 3, 3, 0,  // First face
       4, 5, 5, 6, 6, 7, 7, 4,  // Second face
       0, 4, 1, 5, 2, 6, 3, 7   // Connecting lines between faces
     ];
-    
+
     // Create flattened array of vertices for the edges
     const positions: number[] = [];
-    
+
     for (let i = 0; i < edgeIndices.length; i++) {
       const vertexIndex = edgeIndices[i];
       const vertex = vertices[vertexIndex];
       positions.push(vertex[0], vertex[1], vertex[2]);
     }
-    
+
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    
+
     // Create material with color based on selection state
     const material = new THREE.LineBasicMaterial({
       color: isSelected ? 0xffff00 : 0xff0000, // Yellow if selected, red otherwise
       linewidth: isSelected ? 2 : 1 // Thicker line if selected
     });
-    
+
     return new THREE.LineSegments(geometry, material);
   }
 
@@ -1084,31 +1085,31 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     // Remove existing helper if any
     const existingHelper = this.scene.getObjectByName('localAxesHelper');
     if (existingHelper) this.scene.remove(existingHelper);
-    
+
     if (this.boundingBoxEditData.length === 0 || this.selectedBoundingBoxIndex < 0) return;
-    
+
     const boxData = this.boundingBoxEditData[this.selectedBoundingBoxIndex];
-    
+
     // Create rotation matrix from euler angles
     const rotation = new THREE.Euler(
-      boxData.rotationX, 
-      boxData.rotationY, 
-      boxData.rotationZ, 
+      boxData.rotationX,
+      boxData.rotationY,
+      boxData.rotationZ,
       'ZYX'
     );
     const quaternion = new THREE.Quaternion().setFromEuler(rotation);
-    
+
     // Create axis helpers - use a smaller size than global axes
     const axisLength = Math.max(
-      boxData.dimensionX, 
-      boxData.dimensionY, 
+      boxData.dimensionX,
+      boxData.dimensionY,
       boxData.dimensionZ
     ) * 1.2;
-    
+
     // Create custom axes helper with thick lines
     const axesGroup = new THREE.Group();
     axesGroup.name = 'localAxesHelper';
-    
+
     // X axis - red
     const xAxisGeometry = new THREE.BufferGeometry();
     xAxisGeometry.setAttribute('position', new THREE.Float32BufferAttribute([
@@ -1116,7 +1117,7 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     ], 3));
     const xAxisMaterial = new THREE.LineBasicMaterial({ color: 0xff0000, linewidth: 10 });
     const xAxis = new THREE.Line(xAxisGeometry, xAxisMaterial);
-    
+
     // Y axis - green
     const yAxisGeometry = new THREE.BufferGeometry();
     yAxisGeometry.setAttribute('position', new THREE.Float32BufferAttribute([
@@ -1124,7 +1125,7 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     ], 3));
     const yAxisMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00, linewidth: 10 });
     const yAxis = new THREE.Line(yAxisGeometry, yAxisMaterial);
-    
+
     // Z axis - blue
     const zAxisGeometry = new THREE.BufferGeometry();
     zAxisGeometry.setAttribute('position', new THREE.Float32BufferAttribute([
@@ -1132,18 +1133,18 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     ], 3));
     const zAxisMaterial = new THREE.LineBasicMaterial({ color: 0x0000ff, linewidth: 10 });
     const zAxis = new THREE.Line(zAxisGeometry, zAxisMaterial);
-    
+
     // Add axes to group
     axesGroup.add(xAxis);
     axesGroup.add(yAxis);
     axesGroup.add(zAxis);
-    
+
     // Position and rotate the axes helper
     axesGroup.position.set(boxData.centerX, boxData.centerY, boxData.centerZ);
     axesGroup.quaternion.copy(quaternion);
-    
+
     this.scene.add(axesGroup);
-    
+
     // Make sure the scene is rendered
     this.renderer.render(this.scene, this.camera);
   }
