@@ -2,58 +2,19 @@
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.5.
 
-## Development server
+# Setup
 
-To start a local development server, run:
+The project is supported via node verisons greater than nodejs/20.9.0 and npm version 10.1.0.
+Before setting up the project you should ensure the above environments.
 
-```bash
-ng serve
-```
+Once you pulled the repository, if you see any exisitng ```package-lock.json``` file first remove it. Next run ```npm i```
+You should be good to go.
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+# Running
 
-## Code scaffolding
+The project is divided into two sections. An angular app for the front end and an express js server for the backend. 
+To run the front end run ```npm start```. By default it will run on port 4200
+To run the back end run ```node server.js```. By default it will run on port 3000
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+# Data loading
+To load any data locally you should store the annotation under ```/public/assets/val/<parent_folder>```
