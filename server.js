@@ -2,6 +2,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const cors = require('cors');
+const { console } = require('inspector');
 
 const app = express();
 const PORT = 3000;
@@ -142,7 +143,7 @@ app.get('/api/directory', (req, res) => {
 // New API endpoint for folder statistics
 app.get('/api/directory-stats', (req, res) => {
     try {
-        const assetsDir = path.join(__dirname, 'dist', 'annotations_editor', 'browser', 'assets', 'val');
+        const assetsDir = path.join('/p/weakocc/radowan/3d_annotator_threejs', 'assets', 'val');
         
         // Create directory if it doesn't exist
         if (!fs.existsSync(assetsDir)) {
