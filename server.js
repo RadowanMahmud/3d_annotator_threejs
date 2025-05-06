@@ -30,7 +30,7 @@ app.get('/api/directory', (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const itemsPerPage = 400;
         
-        const assetsDir = path.join('/p/weakocc/radowan/3d_annotator_threejs', 'assets', 'val');
+        const assetsDir = path.join(__dirname, 'public', 'assets', 'val');
         
         // Create directory if it doesn't exist
         if (!fs.existsSync(assetsDir)) {
@@ -143,7 +143,7 @@ app.get('/api/directory', (req, res) => {
 // New API endpoint for folder statistics
 app.get('/api/directory-stats', (req, res) => {
     try {
-        const assetsDir = path.join('/p/weakocc/radowan/3d_annotator_threejs', 'assets', 'val');
+        const assetsDir = path.join(__dirname, 'public', 'assets', 'val');
         
         // Create directory if it doesn't exist
         if (!fs.existsSync(assetsDir)) {
@@ -230,7 +230,7 @@ app.post('/save/:id', (req, res) => {
         }
         
         // Define save directory
-        const saveDirectory = path.join('/p/weakocc/radowan/3d_annotator_threejs', 'assets', 'val', id);
+        const saveDirectory = path.join(__dirname, 'public', 'assets', 'val', id);
         
         // Create directory structure if it doesn't exist
         if (!fs.existsSync(saveDirectory)) {
@@ -275,7 +275,7 @@ app.post('/save/:id/deleted', (req, res) => {
       }
       
       // Define save directory
-      const saveDirectory = path.join('/p/weakocc/radowan/3d_annotator_threejs', 'assets', 'val', id);
+      const saveDirectory = path.join(__dirname, 'public', 'assets', 'val', id);
       
       // Create directory structure if it doesn't exist
       if (!fs.existsSync(saveDirectory)) {
