@@ -85,6 +85,7 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
   } | null = null;
 
   pointSize: number = 0.05;
+  maxDepth: number = 20; // Default maximum depth in meters
 
   initialRotation: any;
   rotationCenter: THREE.Vector3 = new THREE.Vector3();
@@ -880,64 +881,107 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     // Reposition axes helper to object center
     this.axesHelper.position.copy(center);
   }
-  private loadPLYFile(arrayBuffer: ArrayBuffer) {
+  private async analyzePLYDepth(arrayBuffer: ArrayBuffer): Promise<number> {
+    const loader = new PLYLoader();
+    const geometry = loader.parse(arrayBuffer);
+    const positions = geometry.getAttribute('position');
+
+    // Calculate distances for all points
+    const distances: number[] = [];
+    for (let i = 0; i < positions.count; i++) {
+      const vertex = new THREE.Vector3(
+        positions.getX(i),
+        positions.getY(i),
+        positions.getZ(i)
+      );
+      const distance = Math.sqrt(vertex.x * vertex.x + vertex.y * vertex.y + vertex.z * vertex.z);
+      distances.push(distance);
+    }
+
+    // Sort distances to find percentiles
+    distances.sort((a, b) => a - b);
+
+    // Calculate statistics
+    const mean = distances.reduce((a, b) => a + b, 0) / distances.length;
+    const stdDev = Math.sqrt(
+      distances.reduce((sq, n) => sq + Math.pow(n - mean, 2), 0) / distances.length
+    );
+
+    // Find the 95th percentile
+    const percentile95 = distances[Math.floor(distances.length * 0.95)];
+
+    // Calculate a reasonable threshold
+    // Use the minimum of:
+    // 1. 95th percentile (to remove extreme outliers)
+    // 2. mean + 2*stdDev (to remove points beyond 2 standard deviations)
+    const threshold = Math.min(percentile95, mean + 2 * stdDev);
+
+    // Ensure the threshold is not too small
+    return Math.max(threshold, 20); // Minimum threshold of 20 meters (test)
+  }
+
+  private async loadPLYFile(arrayBuffer: ArrayBuffer) {
     // Remove existing point cloud
     if (this.pointCloud) {
       this.scene.remove(this.pointCloud);
     }
-  
+
+    // First analyze the PLY file to determine appropriate depth threshold
+    this.maxDepth = await this.analyzePLYDepth(arrayBuffer);
+    console.log(`Setting depth threshold to ${this.maxDepth.toFixed(2)} meters`);
+
     // Create PLY loader
     const loader = new PLYLoader();
     const geometry = loader.parse(arrayBuffer);
   
     // Apply coordinate transformation to geometry
     const positions = geometry.getAttribute('position');
-    
-    // Create arrays to store filtered positions
-    const filteredPositions = [];
-    const filteredColors = [];
-    
-    // Get color attribute if it exists
-    const colors = geometry.hasAttribute('color') ? geometry.getAttribute('color') : null;
-    
-    // Depth limit
-    const MAX_DEPTH = 500;
-    
-    // Filter points based on depth (z-coordinate)
+    const transformedPositions = new Float32Array(positions.count * 3);
+    const colors = geometry.getAttribute('color');
+    const transformedColors = colors ? new Float32Array(positions.count * 3) : null;
+
+    let validPointCount = 0;
+
     for (let i = 0; i < positions.count; i++) {
-      const x = positions.getX(i);
-      const y = positions.getY(i);
-      const z = positions.getZ(i);
-      
-      // Only keep points with depth (z) less than or equal to MAX_DEPTH
-      if (Math.abs(z) <= MAX_DEPTH) {
-        filteredPositions.push(x, y, z);
-        
-        // Also keep the corresponding color if available
+      const vertex = new THREE.Vector3(
+        positions.getX(i),
+        positions.getY(i),
+        positions.getZ(i)
+      );
+
+      // Calculate distance from origin
+      const distance = Math.sqrt(vertex.x * vertex.x + vertex.y * vertex.y + vertex.z * vertex.z);
+
+      // Only include points within the depth limit
+      if (distance <= this.maxDepth) {
+        transformedPositions[validPointCount * 3] = vertex.x;
+        transformedPositions[validPointCount * 3 + 1] = vertex.y;
+        transformedPositions[validPointCount * 3 + 2] = vertex.z;
+
         if (colors) {
-          filteredColors.push(
-            colors.getX(i),
-            colors.getY(i),
-            colors.getZ(i)
-          );
+          transformedColors![validPointCount * 3] = colors.getX(i);
+          transformedColors![validPointCount * 3 + 1] = colors.getY(i);
+          transformedColors![validPointCount * 3 + 2] = colors.getZ(i);
         }
+
+        validPointCount++;
       }
     }
-    
+
     // Create new geometry with filtered points
     const filteredGeometry = new THREE.BufferGeometry();
-    filteredGeometry.setAttribute('position', new THREE.Float32BufferAttribute(filteredPositions, 3));
-    
-    // Add color attribute if available
-    if (colors && filteredColors.length > 0) {
-      filteredGeometry.setAttribute('color', new THREE.Float32BufferAttribute(filteredColors, 3));
+    filteredGeometry.setAttribute('position', new THREE.BufferAttribute(transformedPositions.slice(0, validPointCount * 3), 3));
+
+    if (transformedColors) {
+      filteredGeometry.setAttribute('color', new THREE.BufferAttribute(transformedColors.slice(0, validPointCount * 3), 3));
     }
-    
+
     // Prepare color material
     let material: THREE.PointsMaterial;
-  
-    // Check if filtered geometry has color attribute
-    if (filteredGeometry.hasAttribute('color')) {
+
+    // Check if geometry has color attribute
+    if (transformedColors) {
+
       // Use vertex colors if available
       material = new THREE.PointsMaterial({
         size: this.pointSize,
@@ -953,13 +997,13 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
   
     // Create point cloud without centering
     this.pointCloud = new THREE.Points(filteredGeometry, material);
-  
+    
     // Update point cloud stats
     filteredGeometry.computeBoundingBox();
     const boundingBox = filteredGeometry.boundingBox;
     if (boundingBox) {
       this.pointCloudStats = {
-        points: filteredGeometry.attributes['position'].count,
+        points: validPointCount,
         boundingBox: {
           min: boundingBox.min,
           max: boundingBox.max
