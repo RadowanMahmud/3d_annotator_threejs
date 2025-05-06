@@ -933,7 +933,7 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     // Create PLY loader
     const loader = new PLYLoader();
     const geometry = loader.parse(arrayBuffer);
-
+  
     // Apply coordinate transformation to geometry
     const positions = geometry.getAttribute('position');
     const transformedPositions = new Float32Array(positions.count * 3);
@@ -981,6 +981,7 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
 
     // Check if geometry has color attribute
     if (transformedColors) {
+
       // Use vertex colors if available
       material = new THREE.PointsMaterial({
         size: this.pointSize,
@@ -993,10 +994,10 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
         size: this.pointSize
       });
     }
-
+  
     // Create point cloud without centering
     this.pointCloud = new THREE.Points(filteredGeometry, material);
-
+    
     // Update point cloud stats
     filteredGeometry.computeBoundingBox();
     const boundingBox = filteredGeometry.boundingBox;
