@@ -18,3 +18,10 @@ To run the back end run ```node server.js```. By default it will run on port 300
 
 # Data loading
 To load any data locally you should store the annotation under ```/public/assets/val/<parent_folder>```
+You need to have the following files under the parent directory
+```
+1. cam_params.json
+2. input.png
+3. depth_scene.png
+4. 3dbbox_ground_no_icp.json
+```
