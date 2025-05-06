@@ -885,35 +885,59 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     if (this.pointCloud) {
       this.scene.remove(this.pointCloud);
     }
-
+  
     // Create PLY loader
     const loader = new PLYLoader();
     const geometry = loader.parse(arrayBuffer);
-
+  
     // Apply coordinate transformation to geometry
     const positions = geometry.getAttribute('position');
-    const transformedPositions = new Float32Array(positions.count * 3);
-
+    
+    // Create arrays to store filtered positions
+    const filteredPositions = [];
+    const filteredColors = [];
+    
+    // Get color attribute if it exists
+    const colors = geometry.hasAttribute('color') ? geometry.getAttribute('color') : null;
+    
+    // Depth limit
+    const MAX_DEPTH = 500;
+    
+    // Filter points based on depth (z-coordinate)
     for (let i = 0; i < positions.count; i++) {
-      const vertex = new THREE.Vector3(
-        positions.getX(i),
-        positions.getY(i),
-        positions.getZ(i)
-      );
-
-      transformedPositions[i * 3] = vertex.x;
-      transformedPositions[i * 3 + 1] = vertex.y;
-      transformedPositions[i * 3 + 2] = vertex.z;
+      const x = positions.getX(i);
+      const y = positions.getY(i);
+      const z = positions.getZ(i);
+      
+      // Only keep points with depth (z) less than or equal to MAX_DEPTH
+      if (Math.abs(z) <= MAX_DEPTH) {
+        filteredPositions.push(x, y, z);
+        
+        // Also keep the corresponding color if available
+        if (colors) {
+          filteredColors.push(
+            colors.getX(i),
+            colors.getY(i),
+            colors.getZ(i)
+          );
+        }
+      }
     }
-
-    // Replace original positions with transformed positions
-    geometry.setAttribute('position', new THREE.BufferAttribute(transformedPositions, 3));
-
+    
+    // Create new geometry with filtered points
+    const filteredGeometry = new THREE.BufferGeometry();
+    filteredGeometry.setAttribute('position', new THREE.Float32BufferAttribute(filteredPositions, 3));
+    
+    // Add color attribute if available
+    if (colors && filteredColors.length > 0) {
+      filteredGeometry.setAttribute('color', new THREE.Float32BufferAttribute(filteredColors, 3));
+    }
+    
     // Prepare color material
     let material: THREE.PointsMaterial;
-
-    // Check if geometry has color attribute
-    if (geometry.hasAttribute('color')) {
+  
+    // Check if filtered geometry has color attribute
+    if (filteredGeometry.hasAttribute('color')) {
       // Use vertex colors if available
       material = new THREE.PointsMaterial({
         size: this.pointSize,
@@ -926,16 +950,16 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
         size: this.pointSize
       });
     }
-
+  
     // Create point cloud without centering
-    this.pointCloud = new THREE.Points(geometry, material);
-
+    this.pointCloud = new THREE.Points(filteredGeometry, material);
+  
     // Update point cloud stats
-    geometry.computeBoundingBox();
-    const boundingBox = geometry.boundingBox;
+    filteredGeometry.computeBoundingBox();
+    const boundingBox = filteredGeometry.boundingBox;
     if (boundingBox) {
       this.pointCloudStats = {
-        points: geometry.attributes['position'].count,
+        points: filteredGeometry.attributes['position'].count,
         boundingBox: {
           min: boundingBox.min,
           max: boundingBox.max
