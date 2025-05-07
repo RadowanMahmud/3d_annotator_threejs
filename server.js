@@ -140,6 +140,67 @@ app.get('/api/directory', (req, res) => {
 });
 
 
+
+app.get('/api/getindex/:id', (req, res) => {
+    try {
+        // Extract parameters
+        const { id } = req.params;
+        const itemsPerPage = 400;
+        
+        const assetsDir = path.join(__dirname, 'public', 'assets', 'val');
+        
+        // Create directory if it doesn't exist
+        if (!fs.existsSync(assetsDir)) {
+            fs.mkdirSync(assetsDir, { recursive: true });
+        }
+
+        // Read all items from directory
+        const items = fs.readdirSync(assetsDir);
+        
+        // Sort items alphabetically
+        items.sort((a, b) => a.localeCompare(b));
+        
+        // Find the item with matching id
+        const itemIndex = items.findIndex(item => item === id || item.startsWith(id));
+        
+        // Calculate the correct page number based on the found item's index
+        let page = 1;
+        if (itemIndex !== -1) {
+            page = Math.floor(itemIndex / itemsPerPage) + 1;
+        } else {
+            // If no item found, use the query parameter if provided
+            page = parseInt(req.query.page) || 1;
+        }
+
+        // Prepare response object
+        const response = {
+            success: true,
+            currentPage: page
+        };
+        
+        // Add previous and next indices if the item was found
+        if (itemIndex !== -1) {
+            response.item = {
+                current: items[itemIndex],
+                currentIndex: itemIndex,
+                previous: itemIndex > 0 ? items[itemIndex - 1] : null,
+                previousIndex: itemIndex > 0 ? itemIndex - 1 : null,
+                next: itemIndex < items.length - 1 ? items[itemIndex + 1] : null,
+                nextIndex: itemIndex < items.length - 1 ? itemIndex + 1 : null
+            };
+        }
+        
+        res.status(200).json(response);
+    } catch (error) {
+        console.error('Error reading directory:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to read directory structure',
+            details: error.message
+        });
+    }
+});
+
 // New API endpoint for folder statistics
 app.get('/api/directory-stats', (req, res) => {
     try {
