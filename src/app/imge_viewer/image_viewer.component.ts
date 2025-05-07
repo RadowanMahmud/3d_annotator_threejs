@@ -29,7 +29,8 @@ export class ImageViewerComponent implements OnInit, OnChanges {
   @Input() cubeList: any | null = null;
   @Input() imagePath: any | null = null;
 
-
+  private apiBaseUrl = 'http://cvlabhumanrefinement.cs.virginia.edu';
+  // private apiBaseUrl = 'http://localhost:3000';
   isLoading = false;
   error: string | null = null;
   sceneDir = 'assets/scene_data'; // Default scene directory path
@@ -233,7 +234,13 @@ export class ImageViewerComponent implements OnInit, OnChanges {
   }
 
   onJSONCameraParamsFileUpload(jsonPath: string) {
-    fetch(`${jsonPath}/cam_params.json`)
+    const folderId = this.getDirectoryIdFromPath(jsonPath);
+    if (!folderId) {
+      console.error('Invalid path format');
+      return;
+    }
+
+    fetch(`${this.apiBaseUrl}/assets/val/${folderId}/cam_params.json`)
       .then(response => {
         if (!response.ok) {
           throw new Error(`Failed to load camera parameters: ${response.status} ${response.statusText}`);
@@ -280,7 +287,13 @@ export class ImageViewerComponent implements OnInit, OnChanges {
     reader.readAsDataURL(file);
   }
   onImageload(imagePath: string) {
-    fetch(`${imagePath}/input.png`)
+    const folderId = this.getDirectoryIdFromPath(imagePath);
+    if (!folderId) {
+      console.error('Invalid path format');
+      return;
+    }
+
+    fetch(`${this.apiBaseUrl}/assets/val/${folderId}/input.png`)
       .then(response => {
         if (!response.ok) {
           throw new Error(`Failed to load image: ${response.status} ${response.statusText}`);
@@ -317,5 +330,12 @@ export class ImageViewerComponent implements OnInit, OnChanges {
       .catch(error => {
         console.error('Error loading the image:', error);
       });
+  }
+
+  // Helper method to extract directory ID from path
+  private getDirectoryIdFromPath(path: string): string | null {
+    if (!path) return null;
+    const pathParts = path.split('/');
+    return pathParts.length > 0 ? pathParts[pathParts.length - 1] : null;
   }
 }
