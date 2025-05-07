@@ -8,6 +8,7 @@ import { ImageViewerComponent } from "../imge_viewer/image_viewer.component";
 import { ActivatedRoute } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { Subscription } from 'rxjs';
+import { Router } from '@angular/router';
 
 interface BoundingBoxData {
   obj_id: string;
@@ -63,6 +64,11 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
   private animationFrameId: number | null = null;
   private routeSubscription: Subscription | null = null;
 
+  // Add new properties for folder list management
+  private folderList: string[] = [];
+  private currentPage: number = 1;
+  private readonly STORAGE_KEY = 'folderList';
+  private readonly STORAGE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
   keyState: any;
 
@@ -71,8 +77,12 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
   optOutMessage: string = '';
   optOutSuccess: boolean = false;
 
+  //private apiBaseUrl = 'http://cvlabhumanrefinement.cs.virginia.edu';
+  private apiBaseUrl = 'http://localhost:3000';
+
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private http: HttpClient
   ) { }
 
@@ -98,8 +108,6 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
   private isDepthFileLoaded: boolean = false;
   private isBoundingBoxLoaded: boolean = false;
   private type: string = 'default';
-  // apiBaseUrl = 'http://cvlabhumanrefinement.cs.virginia.edu/api'; // Update with your actual API URL
-  apiBaseUrl = 'http://localhost:3000'; // Update with your actual API URL
 
   // Modified ngOnInit to store the subscription
   ngOnInit() {
@@ -115,6 +123,7 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     this.initScene();
     this.animate();
     this.setupEventListeners();
+    this.loadFolderList();
   }
 
   private checkOptOutStatus() {
@@ -250,8 +259,15 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       const decodedPath = decodeURIComponent(path);
       this.decoded_path = decodedPath;
 
+      // Extract the folder ID from the path
+      const folderId = this.getDirectoryIdFromPath();
+      if (!folderId) {
+        console.error('Invalid path format');
+        return;
+      }
+
       // Load PLY file
-      fetch(`${decodedPath}/depth_scene.ply`)
+      fetch(`${this.apiBaseUrl}/assets/val/${folderId}/depth_scene.ply`)
         .then(response => {
           if (!response.ok) {
             throw new Error(`Failed to load PLY file: ${response.status} ${response.statusText}`);
@@ -269,7 +285,7 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
 
       // Load bounding box file
       const file = this.type === 'default' ? '3dbbox_ground_no_icp' : '3dbox_refined';
-      fetch(`${decodedPath}/${file}.json`)
+      fetch(`${this.apiBaseUrl}/assets/val/${folderId}/${file}.json`)
         .then(response => {
           if (!response.ok) {
             throw new Error(`Failed to load bounding box file: ${response.status} ${response.statusText}`);
@@ -926,34 +942,34 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     if (this.pointCloud) {
       this.scene.remove(this.pointCloud);
     }
-  
+
     // Create PLY loader
     const loader = new PLYLoader();
     const geometry = loader.parse(arrayBuffer);
-  
+
     // Apply coordinate transformation to geometry
     const positions = geometry.getAttribute('position');
-    
+
     // Create arrays to store filtered positions
     const filteredPositions = [];
     const filteredColors = [];
-    
+
     // Get color attribute if it exists
     const colors = geometry.hasAttribute('color') ? geometry.getAttribute('color') : null;
-    
+
     // Depth limit
     const MAX_DEPTH = 500;
-    
+
     // Filter points based on depth (z-coordinate)
     for (let i = 0; i < positions.count; i++) {
       const x = positions.getX(i);
       const y = positions.getY(i);
       const z = positions.getZ(i);
-      
+
       // Only keep points with depth (z) less than or equal to MAX_DEPTH
       if (Math.abs(z) <= MAX_DEPTH) {
         filteredPositions.push(x, y, z);
-        
+
         // Also keep the corresponding color if available
         if (colors) {
           filteredColors.push(
@@ -964,19 +980,19 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
         }
       }
     }
-    
+
     // Create new geometry with filtered points
     const filteredGeometry = new THREE.BufferGeometry();
     filteredGeometry.setAttribute('position', new THREE.Float32BufferAttribute(filteredPositions, 3));
-    
+
     // Add color attribute if available
     if (colors && filteredColors.length > 0) {
       filteredGeometry.setAttribute('color', new THREE.Float32BufferAttribute(filteredColors, 3));
     }
-    
+
     // Prepare color material
     let material: THREE.PointsMaterial;
-  
+
     // Check if filtered geometry has color attribute
     if (filteredGeometry.hasAttribute('color')) {
       // Use vertex colors if available
@@ -991,10 +1007,10 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
         size: this.pointSize
       });
     }
-  
+
     // Create point cloud without centering
     this.pointCloud = new THREE.Points(filteredGeometry, material);
-  
+
     // Update point cloud stats
     filteredGeometry.computeBoundingBox();
     const boundingBox = filteredGeometry.boundingBox;
@@ -1007,10 +1023,10 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
         }
       };
     }
-  
+
     // Add to scene at original position
     this.scene.add(this.pointCloud);
-  
+
     // Adjust camera to view the entire point cloud
     this.fitCameraToObject(this.pointCloud);
   }
@@ -1212,5 +1228,167 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
 
     // Make sure the scene is rendered
     this.renderer.render(this.scene, this.camera);
+  }
+
+  // Add new method to load folder list
+  private loadFolderList() {
+    // Try to get from local storage first
+    const storedData = localStorage.getItem(this.STORAGE_KEY);
+    if (storedData) {
+      const { list, timestamp } = JSON.parse(storedData);
+      // Check if data is still valid (not expired)
+      if (Date.now() - timestamp < this.STORAGE_EXPIRY) {
+        this.folderList = list;
+        console.log('Using cached folder list:', this.folderList);
+        return;
+      }
+    }
+
+    // If no valid data in storage, fetch from API
+    console.log('Fetching folder list from API...');
+    this.http.get<{ success: boolean, structure: { path: string, isFolder: boolean }[] }>(
+      `${this.apiBaseUrl}/api/directory?page=1&itemsPerPage=1000`
+    ).subscribe({
+      next: (response) => {
+        if (response.success && response.structure) {
+          this.folderList = response.structure
+            .filter(item => item.isFolder)
+            .map(item => item.path.split('/').pop() || '');
+
+          console.log('Fetched folder list:', this.folderList);
+          console.log('Total folders:', this.folderList.length);
+
+          // Store in local storage with timestamp
+          localStorage.setItem(this.STORAGE_KEY, JSON.stringify({
+            list: this.folderList,
+            timestamp: Date.now()
+          }));
+        }
+      },
+      error: (error) => {
+        console.error('Failed to load folder list:', error);
+      }
+    });
+  }
+
+  async goToPreviousSample() {
+    try {
+      const currentPath = this.decoded_path;
+      const pathParts = currentPath.split('/');
+      const currentFolder = pathParts[pathParts.length - 1];
+
+      console.log('Current folder:', currentFolder);
+      console.log('Current page:', this.currentPage);
+
+      // Get the current page and folder info from the API
+      const response = await fetch(`${this.apiBaseUrl}/api/getindex/${currentFolder}?page=${this.currentPage}`);
+      console.log('API Response status:', response.status);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log('API Response data:', data);
+
+      if (!data.success) {
+        console.error('Failed to get folder index:', data.error);
+        return;
+      }
+
+      if (!data.item?.previous) {
+        alert('This is the first sample in the list');
+        return;
+      }
+
+      // Update current page if needed
+      this.currentPage = data.currentPage;
+      console.log('Updated current page:', this.currentPage);
+
+      // Navigate to the previous sample with the correct path structure
+      const encodedPath = encodeURIComponent(`assets/val/${data.item.previous}`);
+      console.log('Navigating to:', encodedPath);
+      this.router.navigate(['/dashboard', encodedPath, this.type]);
+    } catch (error: any) {
+      console.error('Error navigating to previous sample:', error);
+      alert('Failed to navigate to previous sample: ' + error.message);
+    }
+  }
+
+  async goToNextSample() {
+    try {
+      const currentPath = this.decoded_path;
+      const pathParts = currentPath.split('/');
+      const currentFolder = pathParts[pathParts.length - 1];
+
+      console.log('Current folder:', currentFolder);
+      console.log('Current page:', this.currentPage);
+
+      // Get the current page and folder info from the API
+      const response = await fetch(`${this.apiBaseUrl}/api/getindex/${currentFolder}?page=${this.currentPage}`);
+      console.log('API Response status:', response.status);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log('API Response data:', data);
+
+      if (!data.success) {
+        console.error('Failed to get folder index:', data.error);
+        return;
+      }
+
+      if (!data.item?.next) {
+        alert('This is the last sample in the list');
+        return;
+      }
+
+      // Update current page if needed
+      this.currentPage = data.currentPage;
+      console.log('Updated current page:', this.currentPage);
+
+      // Navigate to the next sample with the correct path structure
+      const encodedPath = encodeURIComponent(`assets/val/${data.item.next}`);
+      console.log('Navigating to:', encodedPath);
+      this.router.navigate(['/dashboard', encodedPath, this.type]);
+    } catch (error: any) {
+      console.error('Error navigating to next sample:', error);
+      alert('Failed to navigate to next sample: ' + error.message);
+    }
+  }
+
+  goToHome() {
+    // Navigate to home with current page
+    this.router.navigate(['/'], { queryParams: { page: this.currentPage } });
+  }
+
+  // Add a method to clear existing data
+  private clearExistingData() {
+    // Clear point cloud
+    if (this.pointCloud) {
+      this.scene.remove(this.pointCloud);
+      this.pointCloud.geometry.dispose();
+      (this.pointCloud.material as THREE.Material).dispose();
+      this.pointCloud = null;
+    }
+
+    // Clear bounding boxes
+    if (this.boundingBoxMesh) {
+      this.scene.remove(this.boundingBoxMesh);
+      if (this.boundingBoxMesh instanceof THREE.Group) {
+        this.boundingBoxMesh.children.forEach(child => {
+          if (child instanceof THREE.LineSegments) {
+            child.geometry.dispose();
+            (child.material as THREE.Material).dispose();
+          }
+        });
+      }
+      this.boundingBoxMesh = null;
+    }
+
+    // Clear data arrays
+    this.boundingBoxEditData = [];
+    this.boundingJsonBoxData = [];
+    this.selectedBoundingBoxIndex = 0;
   }
 }

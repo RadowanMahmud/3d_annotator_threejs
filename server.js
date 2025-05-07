@@ -29,33 +29,33 @@ app.get('/api/directory', (req, res) => {
         // Extract pagination parameters
         const page = parseInt(req.query.page) || 1;
         const itemsPerPage = 400;
-        
+
         const assetsDir = path.join(__dirname, 'public', 'assets', 'val');
-        
+
         // Create directory if it doesn't exist
         if (!fs.existsSync(assetsDir)) {
             fs.mkdirSync(assetsDir, { recursive: true });
         }
-        
+
         // Recursive function to build directory structure
         const buildDirectoryStructure = (dir, basePath = '', level = 0) => {
             const items = fs.readdirSync(dir);
             const structure = [];
-            
+
             // Sort items alphabetically
             items.sort((a, b) => a.localeCompare(b));
-            
+
             items.forEach(item => {
                 const itemPath = path.join(dir, item);
                 const relativePath = path.join(basePath, item);
                 const stats = fs.statSync(itemPath);
                 const isFolder = stats.isDirectory();
-                
+
                 // Check if the folder has a 3dbox_refined.json file
                 let has3dBoxRefined = false;
                 let refinedBoxPath = null;
                 let isDeleted = false; // Added property for deletion status
-                
+
                 if (isFolder) {
                     const files = fs.readdirSync(itemPath);
                     const refinedFile = files.find(file => file.endsWith('3dbox_refined.json'));
@@ -63,12 +63,12 @@ app.get('/api/directory', (req, res) => {
                     if (has3dBoxRefined) {
                         refinedBoxPath = 'assets/val' + path.join(relativePath, refinedFile).replace(/\\/g, '/');
                     }
-                    
+
                     // Check if deleted.json exists
                     const deletedFile = files.find(file => file === 'deleted.json');
                     isDeleted = deletedFile !== undefined;
                 }
-                
+
                 const folderItem = {
                     name: item,
                     path: 'assets/val/' + relativePath.replace(/\\/g, '/'),
@@ -78,21 +78,21 @@ app.get('/api/directory', (req, res) => {
                     refinedBoxPath: refinedBoxPath,
                     is_deleted: isDeleted // Add the is_deleted property
                 };
-                
+
                 if (isFolder) {
                     folderItem.isExpanded = false;
                     // folderItem.children = buildDirectoryStructure(itemPath, relativePath, level + 1);
                 }
-                
+
                 structure.push(folderItem);
             });
-            
+
             return structure;
         };
-        
+
         // Build the directory structure starting from assets folder
         const structure = buildDirectoryStructure(assetsDir, '', 0);
-        
+
         // Add index as id to each item
         const addIds = (items, startId = 1) => {
             let currentId = startId;
@@ -104,21 +104,21 @@ app.get('/api/directory', (req, res) => {
             });
             return currentId;
         };
-        
+
         addIds(structure);
-        
+
         // Only count parent directories (top-level) for pagination
         const parentDirectories = structure.filter(item => item.isFolder);
         const totalItems = parentDirectories.length;
         const totalPages = Math.ceil(totalItems / itemsPerPage);
-        
+
         // Sort parent directories alphabetically
         parentDirectories.sort((a, b) => a.name.localeCompare(b.name));
-        
+
         // If pagination is requested, prepare data for the specific page
         // For the API, we'll return the full structure but with pagination info
         // The actual pagination will be handled on the client side
-        
+
         res.status(200).json({
             success: true,
             structure: structure,
@@ -146,9 +146,9 @@ app.get('/api/getindex/:id', (req, res) => {
         // Extract parameters
         const { id } = req.params;
         const itemsPerPage = 400;
-        
+
         const assetsDir = path.join(__dirname, 'public', 'assets', 'val');
-        
+
         // Create directory if it doesn't exist
         if (!fs.existsSync(assetsDir)) {
             fs.mkdirSync(assetsDir, { recursive: true });
@@ -156,13 +156,13 @@ app.get('/api/getindex/:id', (req, res) => {
 
         // Read all items from directory
         const items = fs.readdirSync(assetsDir);
-        
+
         // Sort items alphabetically
         items.sort((a, b) => a.localeCompare(b));
-        
+
         // Find the item with matching id
         const itemIndex = items.findIndex(item => item === id || item.startsWith(id));
-        
+
         // Calculate the correct page number based on the found item's index
         let page = 1;
         if (itemIndex !== -1) {
@@ -177,7 +177,7 @@ app.get('/api/getindex/:id', (req, res) => {
             success: true,
             currentPage: page
         };
-        
+
         // Add previous and next indices if the item was found
         if (itemIndex !== -1) {
             response.item = {
@@ -189,7 +189,7 @@ app.get('/api/getindex/:id', (req, res) => {
                 nextIndex: itemIndex < items.length - 1 ? itemIndex + 1 : null
             };
         }
-        
+
         res.status(200).json(response);
     } catch (error) {
         console.error('Error reading directory:', error);
@@ -205,7 +205,7 @@ app.get('/api/getindex/:id', (req, res) => {
 app.get('/api/directory-stats', (req, res) => {
     try {
         const assetsDir = path.join(__dirname, 'public', 'assets', 'val');
-        
+
         // Create directory if it doesn't exist
         if (!fs.existsSync(assetsDir)) {
             fs.mkdirSync(assetsDir, { recursive: true });
@@ -218,7 +218,7 @@ app.get('/api/directory-stats', (req, res) => {
                 }
             });
         }
-        
+
         // Function to count folders by type recursively
         const countFolders = (dir) => {
             let stats = {
@@ -226,27 +226,27 @@ app.get('/api/directory-stats', (req, res) => {
                 refinedFolders: 0,
                 deletedFolders: 0
             };
-            
+
             const items = fs.readdirSync(dir);
-            
+
             items.forEach(item => {
                 const itemPath = path.join(dir, item);
                 const itemStats = fs.statSync(itemPath);
-                
+
                 if (itemStats.isDirectory()) {
                     stats.totalFolders++;
-                    
+
                     // Check if this folder has refinements or is deleted
                     const files = fs.readdirSync(itemPath);
-                    
+
                     if (files.some(file => file.endsWith('3dbox_refined.json'))) {
                         stats.refinedFolders++;
                     }
-                    
+
                     if (files.some(file => file === 'deleted.json')) {
                         stats.deletedFolders++;
                     }
-                    
+
                     // Recursively count in subfolders
                     const subStats = countFolders(itemPath);
                     stats.totalFolders += subStats.totalFolders;
@@ -254,13 +254,13 @@ app.get('/api/directory-stats', (req, res) => {
                     stats.deletedFolders += subStats.deletedFolders;
                 }
             });
-            
+
             return stats;
         };
-        
+
         // Get the stats
         const stats = countFolders(assetsDir);
-        
+
         res.status(200).json({
             success: true,
             stats: stats
@@ -280,31 +280,31 @@ app.post('/api/save/:id', (req, res) => {
     try {
         const { id } = req.params;
         const jsonData = req.body;
-        
+
         // Validate inputs
         if (!id) {
             return res.status(400).json({ error: 'ID parameter is required' });
         }
-        
+
         if (!jsonData || Object.keys(jsonData).length === 0) {
             return res.status(400).json({ error: 'No JSON data provided' });
         }
-        
+
         // Define save directory
         const saveDirectory = path.join(__dirname, 'public', 'assets', 'val', id);
-        
+
         // Create directory structure if it doesn't exist
         if (!fs.existsSync(saveDirectory)) {
             fs.mkdirSync(saveDirectory, { recursive: true });
         }
-        
+
         // Create filename and path
         const filename = `3dbox_refined.json`;
         const filePath = path.join(saveDirectory, filename);
-        
+
         // Write the file
         fs.writeFileSync(filePath, JSON.stringify(jsonData, null, 2));
-        
+
         res.status(200).json({
             success: true,
             message: 'File saved successfully',
@@ -323,47 +323,47 @@ app.post('/api/save/:id', (req, res) => {
 
 app.post('/api/save/:id/deleted', (req, res) => {
     try {
-      const { id } = req.params;
-      const jsonData = req.body;
-      
-      // Validate inputs
-      if (!id) {
-        return res.status(400).json({ error: 'ID parameter is required' });
-      }
-      
-      if (!jsonData || Object.keys(jsonData).length === 0) {
-        return res.status(400).json({ error: 'No JSON data provided' });
-      }
-      
-      // Define save directory
-      const saveDirectory = path.join(__dirname, 'public', 'assets', 'val', id);
-      
-      // Create directory structure if it doesn't exist
-      if (!fs.existsSync(saveDirectory)) {
-        fs.mkdirSync(saveDirectory, { recursive: true });
-      }
-      
-      // Create filename and path
-      const filename = `deleted.json`;
-      const filePath = path.join(saveDirectory, filename);
-      
-      // Write the file
-      fs.writeFileSync(filePath, JSON.stringify(jsonData, null, 2));
-      
-      res.status(200).json({
-        success: true,
-        message: 'Image marked for deletion',
-        path: `/assets/val/${id}/${filename}`
-      });
+        const { id } = req.params;
+        const jsonData = req.body;
+
+        // Validate inputs
+        if (!id) {
+            return res.status(400).json({ error: 'ID parameter is required' });
+        }
+
+        if (!jsonData || Object.keys(jsonData).length === 0) {
+            return res.status(400).json({ error: 'No JSON data provided' });
+        }
+
+        // Define save directory
+        const saveDirectory = path.join(__dirname, 'public', 'assets', 'val', id);
+
+        // Create directory structure if it doesn't exist
+        if (!fs.existsSync(saveDirectory)) {
+            fs.mkdirSync(saveDirectory, { recursive: true });
+        }
+
+        // Create filename and path
+        const filename = `deleted.json`;
+        const filePath = path.join(saveDirectory, filename);
+
+        // Write the file
+        fs.writeFileSync(filePath, JSON.stringify(jsonData, null, 2));
+
+        res.status(200).json({
+            success: true,
+            message: 'Image marked for deletion',
+            path: `/assets/val/${id}/${filename}`
+        });
     } catch (error) {
-      console.error('Error saving deletion marker:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Failed to mark for deletion',
-        details: error.message
-      });
+        console.error('Error saving deletion marker:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to mark for deletion',
+            details: error.message
+        });
     }
-  });
+});
 
 // Start the server
 app.listen(PORT, (error) => {

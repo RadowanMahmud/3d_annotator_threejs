@@ -9,11 +9,8 @@
 
     <div class="edit-panel" *ngIf="boundingBoxEditData.length > 0 && selectedBoundingBoxIndex !== null">
       <div class="dropdown-container">
-        <select 
-          class="bounding-box-dropdown" 
-          [(ngModel)]="selectedBoundingBoxIndex"
-          (keydown)="handleSelectKeyDown($event)"
-          (change)="onBoundingBoxSelect()">
+        <select class="bounding-box-dropdown" [(ngModel)]="selectedBoundingBoxIndex"
+          (keydown)="handleSelectKeyDown($event)" (change)="onBoundingBoxSelect()">
           <option [ngValue]="null" disabled>Select Bounding Box</option>
           <option *ngFor="let box of boundingBoxEditData; let i = index" [ngValue]="i">
             {{ box.obj_id + ' - ' + box.category_name }}
@@ -25,34 +22,46 @@
         <div class="property-group">
           <h5>Position</h5>
           <div class="property-row">
-            <label>X: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].centerX" (change)="updateBoundingBox()" step="0.01"></label>
-            <label>Y: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].centerY" (change)="updateBoundingBox()" step="0.01"></label>
-            <label>Z: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].centerZ" (change)="updateBoundingBox()" step="0.01"></label>
+            <label>X: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].centerX"
+                (change)="updateBoundingBox()" step="0.01"></label>
+            <label>Y: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].centerY"
+                (change)="updateBoundingBox()" step="0.01"></label>
+            <label>Z: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].centerZ"
+                (change)="updateBoundingBox()" step="0.01"></label>
           </div>
         </div>
 
         <div class="property-group">
           <h5>Dimensions</h5>
           <div class="property-row">
-            <label>Width: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].dimensionX" (change)="updateBoundingBox()" step="0.01"></label>
-            <label>Length: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].dimensionY" (change)="updateBoundingBox()" step="0.01"></label>
-            <label>Height: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].dimensionZ" (change)="updateBoundingBox()" step="0.01"></label>
+            <label>Width: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].dimensionX"
+                (change)="updateBoundingBox()" step="0.01"></label>
+            <label>Length: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].dimensionY"
+                (change)="updateBoundingBox()" step="0.01"></label>
+            <label>Height: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].dimensionZ"
+                (change)="updateBoundingBox()" step="0.01"></label>
           </div>
         </div>
 
         <div class="property-group">
           <h5>Rotation (rad)</h5>
           <div class="property-row">
-            <label>X: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].rotationX" (change)="updateBoundingBox()" step="0.01"></label>
-            <label>Y: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].rotationY" (change)="updateBoundingBox()" step="0.01"></label>
-            <label>Z: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].rotationZ" (change)="updateBoundingBox()" step="0.01"></label>
+            <label>X: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].rotationX"
+                (change)="updateBoundingBox()" step="0.01"></label>
+            <label>Y: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].rotationY"
+                (change)="updateBoundingBox()" step="0.01"></label>
+            <label>Z: <input type="number" [(ngModel)]="boundingBoxEditData[selectedBoundingBoxIndex].rotationZ"
+                (change)="updateBoundingBox()" step="0.01"></label>
           </div>
         </div>
       </div>
 
       <div class="edit-controls">
+        <button (click)="goToHome()" class="nav-btn home-btn">Home</button>
+        <button (click)="goToPreviousSample()" class="nav-btn prev-btn">Previous Sample</button>
         <button (click)="exportBoundingBoxesToJSON()">Save Boxes</button>
         <button (click)="deleteSelectedBoundingBox()" class="delete-btn">Delete Selected Box</button>
+        <button (click)="goToNextSample()" class="nav-btn next-btn">Next Sample</button>
       </div>
     </div>
 
@@ -64,7 +73,8 @@
           <input type="checkbox" [(ngModel)]="optOutChecked" (change)="handleOptOut()">
           Opt out this image (mark for deletion)
         </label>
-        <div *ngIf="optOutStatus" class="opt-out-status" [ngClass]="{'status-success': optOutSuccess, 'status-error': !optOutSuccess}">
+        <div *ngIf="optOutStatus" class="opt-out-status"
+          [ngClass]="{'status-success': optOutSuccess, 'status-error': !optOutSuccess}">
           {{ optOutMessage }}
         </div>
       </div>

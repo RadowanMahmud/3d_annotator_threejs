@@ -44,8 +44,8 @@
 
 .file-input-label {
   padding: 8px 16px;
-  background-color: 
-#4285f4;
+  background-color:
+    #4285f4;
   color: white;
   border-radius: 4px;
   cursor: pointer;
@@ -54,8 +54,8 @@
 }
 
 .file-input-label:hover {
-  background-color: 
-#3367d6;
+  background-color:
+    #3367d6;
 }
 
 .scene-container {
@@ -68,16 +68,16 @@
 }
 
 .edit-panel {
-  background-color: 
-#f8f9fa;
+  background-color:
+    #f8f9fa;
   border: 1px solid #ddd;
   border-radius: 4px;
   padding: 15px;
 }
 
 .mode-indicator {
-  background-color: 
-#fedc56;
+  background-color:
+    #fedc56;
   color: #333;
   padding: 5px 10px;
   border-radius: 4px;
@@ -129,8 +129,7 @@
 
 .edit-controls button {
   padding: 8px 16px;
-  background-color: 
-#4285f4;
+  background-color: #4285f4;
   color: white;
   border: none;
   border-radius: 4px;
@@ -139,8 +138,8 @@
 }
 
 .edit-controls button:hover {
-  background-color: 
-#3367d6;
+  background-color:
+    #3367d6;
 }
 
 .bottom-container {
@@ -155,7 +154,7 @@
   padding: 15px;
   background-color: #f9f9f9;
   border-radius: 5px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .image-viewer-container {
@@ -221,4 +220,24 @@
   font-size: 12px;
   color: #666;
   word-break: break-all;
+}
+
+.nav-btn {
+  background-color: #34a853 !important;
+}
+
+.prev-btn {
+  background-color: #793e00 !important;
+}
+
+.next-btn {
+  background-color: #793e00 !important;
+}
+
+.home-btn {
+  background-color: #000000 !important;
+}
+
+.home-btn:hover {
+  background-color: #7B1FA2;
 }

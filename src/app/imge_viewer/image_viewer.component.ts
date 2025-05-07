@@ -24,12 +24,13 @@ interface CameraParams {
   styleUrls: ['./image_viewer.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ImageViewerComponent implements OnInit, OnChanges  {
+export class ImageViewerComponent implements OnInit, OnChanges {
   @ViewChild('cubeCanvas', { static: true }) canvasElement!: ElementRef<HTMLCanvasElement>;
   @Input() cubeList: any | null = null;
   @Input() imagePath: any | null = null;
 
-  
+  private apiBaseUrl = 'http://cvlabhumanrefinement.cs.virginia.edu';
+  // private apiBaseUrl = 'http://localhost:3000';
   isLoading = false;
   error: string | null = null;
   sceneDir = 'assets/scene_data'; // Default scene directory path
@@ -37,7 +38,7 @@ export class ImageViewerComponent implements OnInit, OnChanges  {
   camera_intrinsic: number[][] | null = null;
   uploadedImage: HTMLImageElement | null = null;
 
-  constructor(@Inject(CubeRendererService) private cubeRenderer: CubeRendererService) {}
+  constructor(@Inject(CubeRendererService) private cubeRenderer: CubeRendererService) { }
 
   ngOnInit(): void {
     if (this.imagePath) {
@@ -50,14 +51,21 @@ export class ImageViewerComponent implements OnInit, OnChanges  {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    console.log(changes)
-    // Check if cubeList changed and is not the first change (initialization)
+    console.log(changes);
+
+    // Handle imagePath changes
+    if (changes['imagePath'] && changes['imagePath'].currentValue) {
+      this.onImageload(changes['imagePath'].currentValue);
+      this.onJSONCameraParamsFileUpload(changes['imagePath'].currentValue);
+    }
+
+    // Handle cubeList changes
     if (changes['cubeList'] && this.uploadedImage && this.camera_intrinsic) {
       // Only draw cubes if we have the required data (image and camera params)
       this.drawCube();
     }
   }
-  
+
 
 
   drawCube(): void {
@@ -119,33 +127,33 @@ export class ImageViewerComponent implements OnInit, OnChanges  {
         canvas.width = img.width;
         canvas.height = img.height;
         const ctx = canvas.getContext('2d');
-        
+
         if (!ctx) {
           observer.error('Could not get canvas context');
           return;
         }
-        
+
         // Draw the original image
         ctx.drawImage(img, 0, 0);
-        
+
         // Draw each cube using the provided camera intrinsic K
         const K = cameraParams.K;
         for (const cube of cubeList) {
           // Project 3D points to 2D
           const verts = cube.bbox3D_cam;
           const points2D = verts.map(point => this.projectTo2D(point, K));
-          
+
           // Find topmost point for text placement
           let minY = Infinity;
           let topmostPoint: [number, number] | null = null;
-          
+
           for (const point of points2D) {
             if (point[1] < minY) {
               minY = point[1];
               topmostPoint = point;
             }
           }
-          
+
           // Draw points
           for (const point of points2D) {
             ctx.beginPath();
@@ -153,27 +161,27 @@ export class ImageViewerComponent implements OnInit, OnChanges  {
             ctx.fillStyle = 'green';
             ctx.fill();
           }
-          
+
           // Define the edges of a cube
           const edges = [
             [0, 1], [1, 2], [2, 3], [3, 0],
             [4, 5], [5, 6], [6, 7], [7, 4],
             [0, 4], [1, 5], [2, 6], [3, 7]
           ];
-          
+
           // Draw edges
           ctx.strokeStyle = 'blue';
           ctx.lineWidth = 2;
           for (const [startIdx, endIdx] of edges) {
             const startPoint = points2D[startIdx];
             const endPoint = points2D[endIdx];
-            
+
             ctx.beginPath();
             ctx.moveTo(startPoint[0], startPoint[1]);
             ctx.lineTo(endPoint[0], endPoint[1]);
             ctx.stroke();
           }
-          
+
           // Draw category name
           if (topmostPoint) {
             ctx.fillStyle = 'red';
@@ -181,7 +189,7 @@ export class ImageViewerComponent implements OnInit, OnChanges  {
             ctx.fillText(cube.category_name, topmostPoint[0], topmostPoint[1] - 10);
           }
         }
-        
+
         observer.next(canvas);
         observer.complete();
       } catch (err) {
@@ -196,14 +204,14 @@ export class ImageViewerComponent implements OnInit, OnChanges  {
     const X = point[0];
     const Y = point[1];
     const Z = point[2];
-    
+
     if (Z <= 0) {
       return [0, 0]; // Point is behind the camera
     }
-    
+
     const u = (K[0][0] * X + K[0][1] * Y + K[0][2] * Z) / Z;
     const v = (K[1][0] * X + K[1][1] * Y + K[1][2] * Z) / Z;
-    
+
     return [u, v];
   }
 
@@ -226,7 +234,13 @@ export class ImageViewerComponent implements OnInit, OnChanges  {
   }
 
   onJSONCameraParamsFileUpload(jsonPath: string) {
-    fetch(`${jsonPath}/cam_params.json`)
+    const folderId = this.getDirectoryIdFromPath(jsonPath);
+    if (!folderId) {
+      console.error('Invalid path format');
+      return;
+    }
+
+    fetch(`${this.apiBaseUrl}/assets/val/${folderId}/cam_params.json`)
       .then(response => {
         if (!response.ok) {
           throw new Error(`Failed to load camera parameters: ${response.status} ${response.statusText}`);
@@ -252,7 +266,7 @@ export class ImageViewerComponent implements OnInit, OnChanges  {
       const img = new Image();
       img.onload = () => {
         this.uploadedImage = img;
-        
+
         // Display the image on the canvas without cubes first
         const canvas = this.canvasElement.nativeElement;
         canvas.width = img.width;
@@ -261,7 +275,7 @@ export class ImageViewerComponent implements OnInit, OnChanges  {
         if (ctx) {
           ctx.drawImage(img, 0, 0);
         }
-        
+
         // If we already have cubes and camera params, we can draw the cubes
         if (this.cubeList && this.camera_intrinsic) {
           this.drawCube();
@@ -273,7 +287,13 @@ export class ImageViewerComponent implements OnInit, OnChanges  {
     reader.readAsDataURL(file);
   }
   onImageload(imagePath: string) {
-    fetch(`${imagePath}/input.png`)
+    const folderId = this.getDirectoryIdFromPath(imagePath);
+    if (!folderId) {
+      console.error('Invalid path format');
+      return;
+    }
+
+    fetch(`${this.apiBaseUrl}/assets/val/${folderId}/input.png`)
       .then(response => {
         if (!response.ok) {
           throw new Error(`Failed to load image: ${response.status} ${response.statusText}`);
@@ -283,10 +303,10 @@ export class ImageViewerComponent implements OnInit, OnChanges  {
       .then(blob => {
         const img = new Image();
         const objectURL = URL.createObjectURL(blob);
-        
+
         img.onload = () => {
           this.uploadedImage = img;
-          
+
           // Display the image on the canvas without cubes first
           const canvas = this.canvasElement.nativeElement;
           canvas.width = img.width;
@@ -295,20 +315,27 @@ export class ImageViewerComponent implements OnInit, OnChanges  {
           if (ctx) {
             ctx.drawImage(img, 0, 0);
           }
-          
+
           // If we already have cubes and camera params, we can draw the cubes
           if (this.cubeList && this.camera_intrinsic) {
             this.drawCube();
           }
-          
+
           // Clean up the object URL to prevent memory leaks
           URL.revokeObjectURL(objectURL);
         };
-        
+
         img.src = objectURL;
       })
       .catch(error => {
         console.error('Error loading the image:', error);
       });
+  }
+
+  // Helper method to extract directory ID from path
+  private getDirectoryIdFromPath(path: string): string | null {
+    if (!path) return null;
+    const pathParts = path.split('/');
+    return pathParts.length > 0 ? pathParts[pathParts.length - 1] : null;
   }
 }
