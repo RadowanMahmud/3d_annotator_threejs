@@ -333,7 +333,8 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       alpha: true
     });
     this.renderer.setPixelRatio(window.devicePixelRatio);
-
+    const gl = this.renderer.getContext();
+    gl.lineWidth(20); // This won't always work, but worth trying
     this.renderer.setSize(
       container.clientWidth || window.innerWidth,
       container.clientHeight || 500
@@ -607,12 +608,12 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
 
       if (i === this.selectedBoundingBoxIndex) {
         // Highlight the selected box
-        material.color.set(0xffff00); // purple
-        material.linewidth = 15;
+        material.color.set(0xff0000); // Red
+        material.linewidth = 20;
       } else {
         // Make other boxes red
-        material.color.set(0xff0000); // Red
-        material.linewidth = 1;
+        material.color.set(0x1410eb); // purple
+        material.linewidth = 10;
       }
     }
 
@@ -1147,8 +1148,8 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
 
     // Create material with color based on selection state
     const material = new THREE.LineBasicMaterial({
-      color: isSelected ? 0xffff00 : 0xff0000, // Yellow if selected, red otherwise
-      linewidth: isSelected ? 2 : 1 // Thicker line if selected
+      color: isSelected ? 0xff0000 : 0x1410eb, // red if selected, blue otherwise
+      linewidth: isSelected ? 20 : 10 // Thicker line if selected
     });
 
     return new THREE.LineSegments(geometry, material);
