@@ -16,6 +16,8 @@ The project is divided into two sections. An angular app for the front end and a
 To run the front end run ```npm start```. By default it will run on port 4200
 To run the back end run ```node server.js```. By default it will run on port 3000
 
+To save data locally in both ```folder_list.component.ts``` and ```UploadPly_2.component``` make sure ```apiBaseUrl``` is set to localhost 
+
 # Data loading
 To load any data locally you should store the annotation under ```/public/assets/val/<parent_folder>```
 You need to have the following files under the parent directory
