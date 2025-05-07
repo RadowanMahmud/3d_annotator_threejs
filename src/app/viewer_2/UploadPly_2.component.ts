@@ -8,6 +8,7 @@ import { ImageViewerComponent } from "../imge_viewer/image_viewer.component";
 import { ActivatedRoute } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { Subscription } from 'rxjs';
+import { Router } from '@angular/router';
 
 interface BoundingBoxData {
   obj_id: string;
@@ -71,8 +72,11 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
   optOutMessage: string = '';
   optOutSuccess: boolean = false;
 
+  private apiBaseUrl = 'http://localhost:3000';
+
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private http: HttpClient
   ) { }
 
@@ -933,7 +937,7 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     // Create PLY loader
     const loader = new PLYLoader();
     const geometry = loader.parse(arrayBuffer);
-  
+
     // Apply coordinate transformation to geometry
     const positions = geometry.getAttribute('position');
     const transformedPositions = new Float32Array(positions.count * 3);
@@ -994,10 +998,10 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
         size: this.pointSize
       });
     }
-  
+
     // Create point cloud without centering
     this.pointCloud = new THREE.Points(filteredGeometry, material);
-    
+
     // Update point cloud stats
     filteredGeometry.computeBoundingBox();
     const boundingBox = filteredGeometry.boundingBox;
@@ -1215,5 +1219,150 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
 
     // Make sure the scene is rendered
     this.renderer.render(this.scene, this.camera);
+  }
+
+  async goToPreviousSample() {
+    try {
+      // Get the current directory path
+      const currentPath = this.decoded_path;
+      const pathParts = currentPath.split('/');
+      const currentFolder = pathParts[pathParts.length - 1];
+
+      // Get the list of all folders
+      const response = await this.http.get<{
+        success: boolean,
+        structure: { path: string, isFolder: boolean }[],
+        pagination: { totalItems: number }
+      }>(`${this.apiBaseUrl}/api/directory?page=1&itemsPerPage=1000`).toPromise();
+
+      if (!response?.success || !response.structure) {
+        console.error('Failed to get folder list');
+        return;
+      }
+
+      // Find the current folder index
+      const folders = response.structure.filter(item => item.isFolder);
+      const currentIndex = folders.findIndex(folder => folder.path.endsWith(currentFolder));
+
+      if (currentIndex === -1) {
+        console.error('Current folder not found in list');
+        return;
+      }
+
+      // Get the previous folder
+      const prevIndex = currentIndex - 1;
+      if (prevIndex < 0) {
+        alert('This is the first sample in the list');
+        return;
+      }
+
+      const prevFolder = folders[prevIndex];
+      const encodedPath = encodeURIComponent(prevFolder.path);
+
+      // Navigate to the previous sample
+      this.router.navigate(['/dashboard', encodedPath, this.type]);
+    } catch (error) {
+      console.error('Error navigating to previous sample:', error);
+      alert('Failed to navigate to previous sample');
+    }
+  }
+
+  // Modify the existing goToNextSample method to handle unsaved changes
+  async goToNextSample() {
+    // // Check for unsaved changes
+    // if (this.hasUnsavedChanges()) {
+    //   const shouldSave = confirm('You have unsaved changes. Would you like to save before proceeding?');
+    //   if (shouldSave) {
+    //     await this.exportBoundingBoxesToJSON();
+    //   }
+    // }
+
+    try {
+      // Get the current directory path
+      const currentPath = this.decoded_path;
+      const pathParts = currentPath.split('/');
+      const currentFolder = pathParts[pathParts.length - 1];
+
+      // Get the list of all folders
+      const response = await this.http.get<{
+        success: boolean,
+        structure: { path: string, isFolder: boolean }[],
+        pagination: { totalItems: number }
+      }>(`${this.apiBaseUrl}/api/directory?page=1&itemsPerPage=1000`).toPromise();
+
+      if (!response?.success || !response.structure) {
+        console.error('Failed to get folder list');
+        return;
+      }
+
+      // Find the current folder index
+      const folders = response.structure.filter(item => item.isFolder);
+      const currentIndex = folders.findIndex(folder => folder.path.endsWith(currentFolder));
+
+      if (currentIndex === -1) {
+        console.error('Current folder not found in list');
+        return;
+      }
+
+      // Get the next folder
+      const nextIndex = currentIndex + 1;
+      if (nextIndex >= folders.length) {
+        alert('This is the last sample in the list');
+        return;
+      }
+
+      const nextFolder = folders[nextIndex];
+      const encodedPath = encodeURIComponent(nextFolder.path);
+
+      // Navigate to the next sample
+      this.router.navigate(['/dashboard', encodedPath, this.type]);
+    } catch (error) {
+      console.error('Error navigating to next sample:', error);
+      alert('Failed to navigate to next sample');
+    }
+  }
+
+  goToHome() {
+    this.router.navigate(['/']);
+  }
+
+  // // Add a method to check for unsaved changes
+  // private hasUnsavedChanges(): boolean {
+  //   // Compare current bounding box data with original data
+  //   // You'll need to store the original data when loading
+  //   return this.boundingBoxEditData.some((box, index) => {
+  //     const originalBox = this.boundingJsonBoxData[index];
+  //     return JSON.stringify(box) !== JSON.stringify(originalBox);
+  //   });
+  // }
+
+  // Add a method to clear existing data
+  private clearExistingData() {
+    // Clear point cloud
+    if (this.pointCloud) {
+      this.scene.remove(this.pointCloud);
+      this.pointCloud.geometry.dispose();
+      (this.pointCloud.material as THREE.Material).dispose();
+      this.pointCloud = null;
+    }
+
+    // Clear bounding boxes
+    if (this.boundingBoxMesh) {
+      this.scene.remove(this.boundingBoxMesh);
+      if (this.boundingBoxMesh instanceof THREE.Group) {
+        this.boundingBoxMesh.children.forEach(child => {
+          if (child instanceof THREE.LineSegments) {
+            child.geometry.dispose();
+            (child.material as THREE.Material).dispose();
+          }
+        });
+      }
+      this.boundingBoxMesh = null;
+    }
+
+    // Clear data arrays
+    this.boundingBoxEditData = [];
+    this.boundingJsonBoxData = [];
+    this.selectedBoundingBoxIndex = 0;
   }
 }
