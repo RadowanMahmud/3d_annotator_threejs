@@ -108,8 +108,6 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
   private isDepthFileLoaded: boolean = false;
   private isBoundingBoxLoaded: boolean = false;
   private type: string = 'default';
-  // apiBaseUrl = 'http://cvlabhumanrefinement.cs.virginia.edu/api'; // Update with your actual API URL
-  apiBaseUrl = 'http://localhost:3000'; // Update with your actual API URL
 
   // Modified ngOnInit to store the subscription
   ngOnInit() {
