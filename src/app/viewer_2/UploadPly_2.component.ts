@@ -99,7 +99,7 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
   private isBoundingBoxLoaded: boolean = false;
   private type: string = 'default';
   // apiBaseUrl = 'http://cvlabhumanrefinement.cs.virginia.edu/api'; // Update with your actual API URL
-  apiBaseUrl = 'http://localhost:3000/api'; // Update with your actual API URL
+  apiBaseUrl = 'http://localhost:3000'; // Update with your actual API URL
 
   // Modified ngOnInit to store the subscription
   ngOnInit() {
@@ -157,7 +157,7 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       // Create deleted.json file
       const deleteData = { deleted: true, timestamp: new Date().toISOString() };
 
-      fetch(`${this.apiBaseUrl}/save/${id}/deleted`, {
+      fetch(`${this.apiBaseUrl}/api/save/${id}/deleted`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -802,7 +802,7 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     const id = this.decoded_path.split('/')[this.decoded_path.split('/').length - 1];
 
     // Call the API to save the file on the server
-    fetch(`${this.apiBaseUrl}/save/${id}`, {
+    fetch(`${this.apiBaseUrl}/api/save/${id}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
