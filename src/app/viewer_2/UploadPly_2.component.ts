@@ -77,8 +77,8 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
   optOutMessage: string = '';
   optOutSuccess: boolean = false;
 
-  //private apiBaseUrl = 'http://cvlabhumanrefinement.cs.virginia.edu';
-  private apiBaseUrl = 'http://localhost:3000';
+  private apiBaseUrl = 'http://cvlabhumanrefinement.cs.virginia.edu/api';
+  // private apiBaseUrl = 'http://localhost:3000';
 
   constructor(
     private route: ActivatedRoute,
@@ -123,7 +123,7 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     this.initScene();
     this.animate();
     this.setupEventListeners();
-    this.loadFolderList();
+    // this.loadFolderList();
   }
 
   private checkOptOutStatus() {
