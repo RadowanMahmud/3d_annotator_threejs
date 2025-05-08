@@ -132,7 +132,13 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     const id = this.getDirectoryIdFromPath();
     if (!id) return;
 
-    fetch(`${this.decoded_path}/deleted.json`)
+    // Reset state first
+    this.optOutChecked = false;
+    this.optOutStatus = false;
+    this.optOutSuccess = false;
+    this.optOutMessage = '';
+
+    fetch(`${this.apiBaseUrl}/assets/val/${id}/deleted.json`)
       .then((response: any) => {
         if (response.ok) {
           return response.json().then((data: any) => {
@@ -141,11 +147,20 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
             this.optOutSuccess = true;
             this.optOutMessage = 'This image is marked for deletion';
           });
+        } else {
+          // If response is not ok (404 or other error), reset state
+          this.optOutChecked = false;
+          this.optOutStatus = false;
+          this.optOutSuccess = false;
+          this.optOutMessage = '';
         }
       })
       .catch(() => {
         // File doesn't exist, which is fine
         this.optOutChecked = false;
+        this.optOutStatus = false;
+        this.optOutSuccess = false;
+        this.optOutMessage = '';
       });
   }
   handleSelectKeyDown(event: KeyboardEvent) {
@@ -1307,7 +1322,10 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       // Navigate to the previous sample with the correct path structure
       const encodedPath = encodeURIComponent(`assets/val/${data.item.previous}`);
       console.log('Navigating to:', encodedPath);
-      this.router.navigate(['/dashboard', encodedPath, this.type]);
+      this.router.navigate(['/dashboard', encodedPath, this.type]).then(() => {
+        // Check opt-out status after navigation
+        this.checkOptOutStatus();
+      });
     } catch (error: any) {
       console.error('Error navigating to previous sample:', error);
       alert('Failed to navigate to previous sample: ' + error.message);
@@ -1350,7 +1368,10 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       // Navigate to the next sample with the correct path structure
       const encodedPath = encodeURIComponent(`assets/val/${data.item.next}`);
       console.log('Navigating to:', encodedPath);
-      this.router.navigate(['/dashboard', encodedPath, this.type]);
+      this.router.navigate(['/dashboard', encodedPath, this.type]).then(() => {
+        // Check opt-out status after navigation
+        this.checkOptOutStatus();
+      });
     } catch (error: any) {
       console.error('Error navigating to next sample:', error);
       alert('Failed to navigate to next sample: ' + error.message);
