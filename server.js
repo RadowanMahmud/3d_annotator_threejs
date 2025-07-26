@@ -30,7 +30,7 @@ app.get('/api/directory', (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const itemsPerPage = 400;
 
-        const assetsDir = path.join(__dirname, 'public', 'assets', 'val');
+        const assetsDir = path.join(__dirname, 'public', 'assets', 'new');
 
         // Create directory if it doesn't exist
         if (!fs.existsSync(assetsDir)) {
@@ -61,7 +61,7 @@ app.get('/api/directory', (req, res) => {
                     const refinedFile = files.find(file => file.endsWith('3dbox_refined.json'));
                     has3dBoxRefined = refinedFile !== undefined;
                     if (has3dBoxRefined) {
-                        refinedBoxPath = 'assets/val' + path.join(relativePath, refinedFile).replace(/\\/g, '/');
+                        refinedBoxPath = 'assets/new' + path.join(relativePath, refinedFile).replace(/\\/g, '/');
                     }
 
                     // Check if deleted.json exists
@@ -71,7 +71,7 @@ app.get('/api/directory', (req, res) => {
 
                 const folderItem = {
                     name: item,
-                    path: 'assets/val/' + relativePath.replace(/\\/g, '/'),
+                    path: 'assets/new/' + relativePath.replace(/\\/g, '/'),
                     isFolder: isFolder,
                     level: level,
                     has3dBoxRefined: has3dBoxRefined,
@@ -147,7 +147,7 @@ app.get('/api/getindex/:id', (req, res) => {
         const { id } = req.params;
         const itemsPerPage = 400;
 
-        const assetsDir = path.join(__dirname, 'public', 'assets', 'val');
+        const assetsDir = path.join(__dirname, 'public', 'assets', 'new');
 
         // Create directory if it doesn't exist
         if (!fs.existsSync(assetsDir)) {
@@ -204,7 +204,7 @@ app.get('/api/getindex/:id', (req, res) => {
 // New API endpoint for folder statistics
 app.get('/api/directory-stats', (req, res) => {
     try {
-        const assetsDir = path.join(__dirname, 'public', 'assets', 'val');
+        const assetsDir = path.join(__dirname, 'public', 'assets', 'new');
 
         // Create directory if it doesn't exist
         if (!fs.existsSync(assetsDir)) {
@@ -291,7 +291,7 @@ app.post('/api/save/:id', (req, res) => {
         }
 
         // Define save directory
-        const saveDirectory = path.join(__dirname, 'public', 'assets', 'val', id);
+        const saveDirectory = path.join(__dirname, 'public', 'assets', 'new', id);
 
         // Create directory structure if it doesn't exist
         if (!fs.existsSync(saveDirectory)) {
@@ -308,7 +308,7 @@ app.post('/api/save/:id', (req, res) => {
         res.status(200).json({
             success: true,
             message: 'File saved successfully',
-            path: `/assets/val/${id}/${filename}`
+            path: `/assets/new/${id}/${filename}`
         });
     } catch (error) {
         console.error('Error saving file:', error);
@@ -336,7 +336,7 @@ app.post('/api/save/:id/deleted', (req, res) => {
         }
 
         // Define save directory
-        const saveDirectory = path.join(__dirname, 'public', 'assets', 'val', id);
+        const saveDirectory = path.join(__dirname, 'public', 'assets', 'new', id);
 
         // Create directory structure if it doesn't exist
         if (!fs.existsSync(saveDirectory)) {
@@ -353,7 +353,7 @@ app.post('/api/save/:id/deleted', (req, res) => {
         res.status(200).json({
             success: true,
             message: 'Image marked for deletion',
-            path: `/assets/val/${id}/${filename}`
+            path: `/assets/new/${id}/${filename}`
         });
     } catch (error) {
         console.error('Error saving deletion marker:', error);

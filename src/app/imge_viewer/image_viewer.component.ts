@@ -240,7 +240,7 @@ export class ImageViewerComponent implements OnInit, OnChanges {
       return;
     }
 
-    fetch(`${this.apiBaseUrl}/assets/val/${folderId}/cam_params.json`)
+    fetch(`${this.apiBaseUrl}/assets/new/${folderId}/cam_params.json`)
       .then(response => {
         if (!response.ok) {
           throw new Error(`Failed to load camera parameters: ${response.status} ${response.statusText}`);
@@ -293,7 +293,7 @@ export class ImageViewerComponent implements OnInit, OnChanges {
       return;
     }
 
-    fetch(`${this.apiBaseUrl}/assets/val/${folderId}/input.png`)
+    fetch(`${this.apiBaseUrl}/assets/new/${folderId}/input.png`)
       .then(response => {
         if (!response.ok) {
           throw new Error(`Failed to load image: ${response.status} ${response.statusText}`);

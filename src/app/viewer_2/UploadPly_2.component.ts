@@ -138,7 +138,7 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
     this.optOutSuccess = false;
     this.optOutMessage = '';
 
-    fetch(`${this.apiBaseUrl}/assets/val/${id}/deleted.json`)
+    fetch(`${this.apiBaseUrl}/assets/new/${id}/deleted.json`)
       .then((response: any) => {
         if (response.ok) {
           return response.json().then((data: any) => {
@@ -282,7 +282,7 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       }
 
       // Load PLY file
-      fetch(`${this.apiBaseUrl}/assets/val/${folderId}/depth_scene.ply`)
+      fetch(`${this.apiBaseUrl}/assets/new/${folderId}/depth_scene.ply`)
         .then(response => {
           if (!response.ok) {
             throw new Error(`Failed to load PLY file: ${response.status} ${response.statusText}`);
@@ -300,7 +300,7 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
 
       // Load bounding box file
       const file = this.type === 'default' ? '3dbbox_ground_no_icp' : '3dbox_refined';
-      fetch(`${this.apiBaseUrl}/assets/val/${folderId}/${file}.json`)
+      fetch(`${this.apiBaseUrl}/assets/new/${folderId}/${file}.json`)
         .then(response => {
           if (!response.ok) {
             throw new Error(`Failed to load bounding box file: ${response.status} ${response.statusText}`);
@@ -1321,7 +1321,7 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       console.log('Updated current page:', this.currentPage);
 
       // Navigate to the previous sample with the correct path structure
-      const encodedPath = encodeURIComponent(`assets/val/${data.item.previous}`);
+      const encodedPath = encodeURIComponent(`assets/new/${data.item.previous}`);
       console.log('Navigating to:', encodedPath);
       this.router.navigate(['/dashboard', encodedPath, this.type]).then(() => {
         // Check opt-out status after navigation
@@ -1367,7 +1367,7 @@ export class PlyViewer2Component implements OnInit, OnDestroy {
       console.log('Updated current page:', this.currentPage);
 
       // Navigate to the next sample with the correct path structure
-      const encodedPath = encodeURIComponent(`assets/val/${data.item.next}`);
+      const encodedPath = encodeURIComponent(`assets/new/${data.item.next}`);
       console.log('Navigating to:', encodedPath);
       this.router.navigate(['/dashboard', encodedPath, this.type]).then(() => {
         // Check opt-out status after navigation
